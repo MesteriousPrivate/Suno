@@ -16,7 +16,7 @@ def start_panel(_):
     ]
     return buttons
 
-# Private panel buttons with correct order
+# Private panel with View My Source in desired position
 def private_panel(_):
     buttons = [
         [
@@ -39,28 +39,39 @@ def private_panel(_):
     ]
     return buttons
 
-# List of source video URLs
+# Video list
 SOURCE_VIDEOS = [
     "https://files.catbox.moe/xjihw1.mp4",
     "https://files.catbox.moe/z3f1wi.mp4",
 ]
 
-# Callback handler for "View My Source"
+# Handle "View My Source"
 @app.on_callback_query(filters.regex("view_source"))
 async def view_source_callback(client, callback_query):
     video_url = random.choice(SOURCE_VIDEOS)
-    await callback_query.message.reply_video(
-        video=video_url,
-        caption="<b>Here is your source file.</b>",
-        reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton("View Now", callback_data="view_now_popup")]]
+    try:
+        await callback_query.message.edit_media(
+            media=video_url,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("View Source Now", callback_data="view_now_popup")],
+                [InlineKeyboardButton("Back", callback_data="back_to_panel")]
+            ])
         )
-    )
-    await callback_query.answer()
+    except Exception as e:
+        await callback_query.answer("Video send failed!", show_alert=True)
 
-# Callback handler for "View Now" button
+# Alert for "View Source Now"
 @app.on_callback_query(filters.regex("view_now_popup"))
 async def view_now_popup(client, callback_query):
-    await callback_query.answer(
-        "OWNER SE BAT KARO", show_alert=True
+    await callback_query.answer("OWNER SE BAT KARO", show_alert=True)
+
+# Back button to restore private panel
+@app.on_callback_query(filters.regex("back_to_panel"))
+async def back_to_panel(client, callback_query):
+    from ShrutiMusic.utils.inline import private_panel  # Ensure correct import
+    lang = await app.get_lang(callback_query.message.chat.id)
+    await callback_query.message.edit_text(
+        text=lang["START_TEXT"],  # Use your actual start message
+        reply_markup=InlineKeyboardMarkup(private_panel(lang)),
+        disable_web_page_preview=True
     )
