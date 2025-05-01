@@ -2,7 +2,7 @@ import os
 import requests
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from ChampuXMusic import app
+from ShrutiMusic import app
 
 
 def upload_file(file_path):
@@ -54,7 +54,7 @@ async def get_link_group(client, message):
             if success:
                 await text.edit_text(
                     f"🌐 | <a href='{upload_url}'>👉 ʏᴏᴜʀ ʟɪɴᴋ ᴛᴀᴘ ʜᴇʀᴇ 👈</a>",
-                    disable_web_page_preview=True,
+                    disable_web_page_preview=False,
                     reply_markup=InlineKeyboardMarkup(
                         [[InlineKeyboardButton("🌍 Tᴀᴘ ᴛᴏ Vɪᴇᴡ", url=upload_url)]]
                     ),
