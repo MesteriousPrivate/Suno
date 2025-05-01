@@ -1,36 +1,28 @@
 import math
+import random
 from pyrogram.types import InlineKeyboardButton
 from ShrutiMusic.utils.formatters import time_to_seconds
 
+# Wave Effect Progress Bar
 def get_progress_bar(played_sec, total_sec):
     try:
         percentage = (played_sec / total_sec) * 100
     except ZeroDivisionError:
         percentage = 0
-    umm = math.floor(percentage)
+    progress_index = int((percentage / 100) * 10)
 
-    if umm <= 0:
-        bar = "◉—————————"
-    elif 0 < umm <= 10:
-        bar = "—◉————————"
-    elif 10 < umm <= 20:
-        bar = "——◉———————"
-    elif 20 < umm <= 30:
-        bar = "———◉——————"
-    elif 30 < umm <= 40:
-        bar = "————◉—————"
-    elif 40 < umm <= 50:
-        bar = "—————◉————"
-    elif 50 < umm <= 60:
-        bar = "——————◉———"
-    elif 60 < umm <= 70:
-        bar = "———————◉——"
-    elif 70 < umm <= 80:
-        bar = "————————◉—"
-    elif 80 < umm < 100:
-        bar = "—————————◉"
-    else:
-        bar = "——————————"
+    bars = ["◉", "●", "○", "◆", "◇", "▣", "▤", "▧", "▩", "⬤"]
+    trail = ["—", "–", "─", "⎯", "⎼", "⎻"]
+
+    wave_symbol = random.choice(bars)
+    line = random.choice(trail)
+
+    bar = ""
+    for i in range(11):
+        if i == progress_index:
+            bar += wave_symbol
+        else:
+            bar += line
 
     return bar
 
