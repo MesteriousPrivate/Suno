@@ -1,10 +1,46 @@
 import math
 import random
-from pyrogram.types import InlineKeyboardButton
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from ShrutiMusic.utils.formatters import time_to_seconds
 
+# Love Sentence Bar
+def get_love_sentence_bar(played_sec: int, total_sec: int) -> str:
+    love_lines = [
+        "❤️ Lᴏᴠᴇ ɪɴ ᴇᴠᴇʀʏ ʙᴇᴀᴛ...",
+        "❣️ Fᴇᴇʟ ᴛʜᴇ ᴍᴜsɪᴄ, Fᴇᴇʟ ᴍᴇ...",
+        "💓 Tᴜɴᴇ ɪɴᴛᴏ ᴏᴜʀ ʜᴇᴀʀᴛs...",
+        "💖 Wʜᴇɴ ʏᴏᴜ ᴘʟᴀʏ, ɪ ᴍᴇʟᴛ...",
+        "💕 Eᴠᴇʀʏ ʙᴇᴀᴛ ɪs ғᴏʀ ʏᴏᴜ...",
+        "💘 Lᴇᴛ ᴍᴇ sɪɴɢ ʏᴏᴜʀ ɴᴀᴍᴇ...",
+        "💝 Mʏ sᴏᴜʟ ᴅᴀɴᴄᴇs ᴡɪᴛʜ ʏᴏᴜ...",
+        "♥️ Yᴏᴜ + Mᴜsɪᴄ = Mᴀɢɪᴄ...",
+        "❥ I ʟᴏᴠᴇ ʏᴏᴜ ʟɪᴋᴇ ʟʏʀɪᴄs ʟᴏᴠᴇ ʙᴇᴀᴛs...",
+        "💞 Oɴ ʀᴇᴘᴇᴀᴛ: Yᴏᴜ.",
+    ]
+    index = (played_sec // 5) % len(love_lines)
+    return love_lines[index]
+
+# Progress Bar Function
+def get_progress_bar(played: int, total: int) -> str:
+    percent = (played / total) * 100
+    full = int(percent // 10)
+    empty = 10 - full
+    bar = "▶️ " + "█" * full + "─" * empty + f" {int(percent)}%"
+    return bar
+
+# Inline Keyboard Generator
+def generate_inline_keyboard(played_sec: int, total_sec: int) -> InlineKeyboardMarkup:
+    love_text = get_love_sentence_bar(played_sec, total_sec)
+    bar = get_progress_bar(played_sec, total_sec)
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton(text=love_text, url="https://t.me/ShrutiBots")],
+        [InlineKeyboardButton(text=bar, callback_data="progress_dummy")]
+    ])
+    return keyboard
+
 # Wave Effect Progress Bar
-def get_progress_bar(played_sec, total_sec):
+def get_wave_effect_bar(played_sec, total_sec):
     try:
         percentage = (played_sec / total_sec) * 100
     except ZeroDivisionError:
@@ -26,6 +62,7 @@ def get_progress_bar(played_sec, total_sec):
 
     return bar
 
+# Track Markup for Buttons
 def track_markup(_, videoid, user_id, channel, fplay):
     buttons = [
         [
@@ -47,10 +84,11 @@ def track_markup(_, videoid, user_id, channel, fplay):
     ]
     return buttons
 
+# Stream Markup Timer
 def stream_markup_timer(_, chat_id, played, dur):
     played_sec = time_to_seconds(played)
     duration_sec = time_to_seconds(dur)
-    progress_bar = get_progress_bar(played_sec, duration_sec)
+    progress_bar = get_wave_effect_bar(played_sec, duration_sec)
 
     buttons = [
         [
@@ -73,18 +111,7 @@ def stream_markup_timer(_, chat_id, played, dur):
     ]
     return buttons
 
-def stream_markup(_, chat_id):
-    buttons = [
-        [
-            InlineKeyboardButton(text="▷", callback_data=f"ADMIN Resume|{chat_id}"),
-            InlineKeyboardButton(text="II", callback_data=f"ADMIN Pause|{chat_id}"),
-            InlineKeyboardButton(text="↻", callback_data=f"ADMIN Replay|{chat_id}"),
-            InlineKeyboardButton(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}"),
-            InlineKeyboardButton(text="▢", callback_data=f"ADMIN Stop|{chat_id}"),
-        ],
-    ]
-    return buttons
-
+# Playlist Markup for Buttons
 def playlist_markup(_, videoid, user_id, ptype, channel, fplay):
     buttons = [
         [
@@ -106,6 +133,7 @@ def playlist_markup(_, videoid, user_id, ptype, channel, fplay):
     ]
     return buttons
 
+# Livestream Markup for Buttons
 def livestream_markup(_, videoid, user_id, mode, channel, fplay):
     buttons = [
         [
@@ -123,6 +151,7 @@ def livestream_markup(_, videoid, user_id, mode, channel, fplay):
     ]
     return buttons
 
+# Slider Markup for Buttons
 def slider_markup(_, videoid, user_id, query, query_type, channel, fplay):
     query = f"{query[:20]}"
     buttons = [
