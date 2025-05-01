@@ -21,7 +21,7 @@ def upload_file(file_path):
 async def get_link_group(client, message):
     if not message.reply_to_message:
         return await message.reply_text(
-            "Pʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴍᴇᴅɪᴀ ᴛᴏ ᴜᴘʟᴏᴀᴅ ᴏɴ CᴀᴛBᴏx"
+            "Pʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴍᴇᴅɪᴀ"
         )
 
     media = message.reply_to_message
@@ -47,7 +47,7 @@ async def get_link_group(client, message):
 
         try:
             local_path = await media.download(progress=progress)
-            await text.edit_text("📤 Uᴘʟᴏᴀᴅɪɴɢ ᴛᴏ CᴀᴛBᴏx...")
+            await text.edit_text("📤 Uᴘʟᴏᴀᴅɪɴɢ...")
 
             success, upload_url = upload_file(local_path)
 
@@ -56,7 +56,7 @@ async def get_link_group(client, message):
                     f"🌐 | <a href='{upload_url}'>👉 ʏᴏᴜʀ ʟɪɴᴋ ᴛᴀᴘ ʜᴇʀᴇ 👈</a>",
                     disable_web_page_preview=False,
                     reply_markup=InlineKeyboardMarkup(
-                        [[InlineKeyboardButton("🌍 Tᴀᴘ ᴛᴏ Vɪᴇᴡ", url=upload_url)]]
+                        [[InlineKeyboardButton("🌍 ᴘʀᴇss ᴀɴᴅ ʜᴏʟᴅ ᴛᴏ ᴠɪᴇᴡ", url=upload_url)]]
                     ),
                 )
             else:
