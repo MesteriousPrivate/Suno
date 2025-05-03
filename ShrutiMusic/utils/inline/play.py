@@ -2,36 +2,15 @@ import math
 from pyrogram.types import InlineKeyboardButton
 from ShrutiMusic.utils.formatters import time_to_seconds
 
+# New Crystal Slider Bar (Extended)
 def get_progress_bar(played_sec, total_sec):
-    try:
-        percentage = (played_sec / total_sec) * 100
-    except ZeroDivisionError:
-        percentage = 0
-    umm = math.floor(percentage)
+    if total_sec == 0:
+        return "◆——————————————◆"
 
-    if umm <= 0:
-        bar = "◉—————————"
-    elif 0 < umm <= 10:
-        bar = "—◉————————"
-    elif 10 < umm <= 20:
-        bar = "——◉———————"
-    elif 20 < umm <= 30:
-        bar = "———◉——————"
-    elif 30 < umm <= 40:
-        bar = "————◉—————"
-    elif 40 < umm <= 50:
-        bar = "—————◉————"
-    elif 50 < umm <= 60:
-        bar = "——————◉———"
-    elif 60 < umm <= 70:
-        bar = "———————◉——"
-    elif 70 < umm <= 80:
-        bar = "————————◉—"
-    elif 80 < umm < 100:
-        bar = "—————————◉"
-    else:
-        bar = "——————————"
+    percentage = played_sec / total_sec
+    filled = int(percentage * 18)
 
+    bar = "◆" + "◼" * filled + "—" * (18 - filled) + "◆"
     return bar
 
 def track_markup(_, videoid, user_id, channel, fplay):
@@ -71,7 +50,7 @@ def stream_markup_timer(_, chat_id, played, dur):
         [
             InlineKeyboardButton(
                 text=f"{played} {progress_bar} {dur}",
-                url="https://t.me/SunoXMusic_bot?startgroup=true"
+                url="https://t.me/SunoXMusic_bot?startgroup=s&admin=delete_messages+manage_video_chats+pin_messages+invite_users"
             )
         ],
         [
