@@ -1,16 +1,13 @@
 import math
 from pyrogram.types import InlineKeyboardButton
-from ShrutiMusic.utils.formatters import time_to_seconds
+from AviaxMusic.utils.formatters import time_to_seconds
 
-# New Crystal Slider Bar (Extended)
 def get_progress_bar(played_sec, total_sec):
     if total_sec == 0:
-        return "◆——————————————◆"
-
+        return "◆————————◆"
     percentage = played_sec / total_sec
-    filled = int(percentage * 18)
-
-    bar = "◆" + "◼" * filled + "—" * (18 - filled) + "◆"
+    filled = int(percentage * 10)
+    bar = "◆" + "◼" * filled + "—" * (10 - filled) + "◆"
     return bar
 
 def track_markup(_, videoid, user_id, channel, fplay):
@@ -37,6 +34,7 @@ def track_markup(_, videoid, user_id, channel, fplay):
 def stream_markup_timer(_, chat_id, played, dur):
     played_sec = time_to_seconds(played)
     duration_sec = time_to_seconds(dur)
+    
     progress_bar = get_progress_bar(played_sec, duration_sec)
 
     buttons = [
