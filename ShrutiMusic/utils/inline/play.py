@@ -1,13 +1,32 @@
 import math
+
 from pyrogram.types import InlineKeyboardButton
+
 from ShrutiMusic.utils.formatters import time_to_seconds
 
 def get_progress_bar(played_sec, total_sec):
-    if total_sec == 0:
-        return "◆————————◆"
-    percentage = played_sec / total_sec
-    filled = int(percentage * 10)
-    bar = "◆" + "◼" * filled + "—" * (10 - filled) + "◆"
+    percentage = (played_sec / total_sec) * 100
+    umm = math.floor(percentage)
+
+    if 0 < umm <= 10:
+        bar = "▬▭▭▭▭▭▭▭▭"
+    elif 10 < umm < 20:
+        bar = "▬▬▭▭▭▭▭▭▭"
+    elif 20 <= umm < 30:
+        bar = "▬▬▬▭▭▭▭▭▭"
+    elif 30 <= umm < 40:
+        bar = "▬▬▬▬▭▭▭▭▭"
+    elif 40 <= umm < 50:
+        bar = "▬▬▬▬▬▭▭▭▭"
+    elif 50 <= umm < 60:
+        bar = "▬▬▬▬▬▬▭▭▭"
+    elif 60 <= umm < 70:
+        bar = "▬▬▬▬▬▬▬▭▭"
+    elif 70 <= umm < 100:
+        bar = "▬▬▬▬▬▬▬▬▬"
+    else:
+        bar = "▬▬▬▬▬▬▬▬"
+
     return bar
 
 def track_markup(_, videoid, user_id, channel, fplay):
@@ -34,7 +53,6 @@ def track_markup(_, videoid, user_id, channel, fplay):
 def stream_markup_timer(_, chat_id, played, dur):
     played_sec = time_to_seconds(played)
     duration_sec = time_to_seconds(dur)
-    
     progress_bar = get_progress_bar(played_sec, duration_sec)
 
     buttons = [
