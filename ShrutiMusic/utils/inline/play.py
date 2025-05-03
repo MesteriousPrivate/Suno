@@ -1,6 +1,6 @@
 import math
 from pyrogram.types import InlineKeyboardButton
-from AviaxMusic.utils.formatters import time_to_seconds
+from ShrutiMusic.utils.formatters import time_to_seconds
 
 def get_progress_bar(played_sec, total_sec):
     if total_sec == 0:
