@@ -1,8 +1,8 @@
 import asyncio
-
 from pyrogram import filters
-from pyrogram.enums import ChatMembersFilter
+from pyrogram.enums import ChatMembersFilter, MessageEntityType
 from pyrogram.errors import FloodWait
+from pyrogram.types import MessageEntity
 
 from ShrutiMusic import app
 from ShrutiMusic.misc import SUDOERS
@@ -19,17 +19,60 @@ from config import adminlist
 
 IS_BROADCASTING = False
 
+async def copy_message_with_entities(client, chat_id, original_message):
+    """Copy message with all formatting and buttons (no forward tag)"""
+    text = original_message.text or original_message.caption or ""
+    entities = original_message.entities or original_message.caption_entities
+    
+    kwargs = {
+        "chat_id": chat_id,
+        "reply_markup": original_message.reply_markup,
+        "disable_web_page_preview": True,  # Disable link preview
+    }
+    
+    if entities:
+        kwargs["entities" if original_message.text else "caption_entities"] = entities
+    
+    if original_message.photo:
+        return await client.send_photo(
+            photo=original_message.photo.file_id,
+            caption=text,
+            **kwargs
+        )
+    elif original_message.video:
+        return await client.send_video(
+            video=original_message.video.file_id,
+            caption=text,
+            **kwargs
+        )
+    elif original_message.audio:
+        return await client.send_audio(
+            audio=original_message.audio.file_id,
+            caption=text,
+            **kwargs
+        )
+    elif original_message.document:
+        return await client.send_document(
+            document=original_message.document.file_id,
+            caption=text,
+            **kwargs
+        )
+    else:
+        return await client.send_message(
+            text=text,
+            **kwargs
+        )
 
 @app.on_message(filters.command("broadcast") & SUDOERS)
 @language
 async def braodcast_message(client, message, _):
     global IS_BROADCASTING
-
+    
+    # Handle -wfchat and -wfuser flags (from original Shruti script)
     if "-wfchat" in message.text or "-wfuser" in message.text:
         if not message.reply_to_message or not (message.reply_to_message.photo or message.reply_to_message.text):
             return await message.reply_text("Please reply to a text or image message for broadcasting.")
 
-        # Extract data from the replied message
         if message.reply_to_message.photo:
             content_type = 'photo'
             file_id = message.reply_to_message.photo.file_id
@@ -43,8 +86,7 @@ async def braodcast_message(client, message, _):
         IS_BROADCASTING = True
         await message.reply_text(_["broad_1"])
 
-        if "-wfchat" in message.text or "-wfuser" in message.text:
-            # Broadcasting to chats
+        if "-wfchat" in message.text:
             sent_chats = 0
             chats = [int(chat["chat_id"]) for chat in await get_served_chats()]
             for i in chats:
@@ -62,7 +104,6 @@ async def braodcast_message(client, message, _):
             await message.reply_text(f"Broadcast to chats completed! Sent to {sent_chats} chats.")
 
         if "-wfuser" in message.text:
-            # Broadcasting to users
             sent_users = 0
             users = [int(user["user_id"]) for user in await get_served_users()]
             for i in users:
@@ -82,99 +123,89 @@ async def braodcast_message(client, message, _):
         IS_BROADCASTING = False
         return
 
-    
+    # Main broadcast handler (from Champu script)
     if message.reply_to_message:
         x = message.reply_to_message.id
         y = message.chat.id
-        reply_markup = message.reply_to_message.reply_markup if message.reply_to_message.reply_markup else None
-        content = None
     else:
         if len(message.command) < 2:
             return await message.reply_text(_["broad_2"])
         query = message.text.split(None, 1)[1]
-        if "-pin" in query:
-            query = query.replace("-pin", "")
-        if "-nobot" in query:
-            query = query.replace("-nobot", "")
-        if "-pinloud" in query:
-            query = query.replace("-pinloud", "")
-        if "-assistant" in query:
-            query = query.replace("-assistant", "")
-        if "-user" in query:
-            query = query.replace("-user", "")
-        if query == "":
+        # Remove all flags
+        for flag in ["-pin", "-nobot", "-pinloud", "-assistant", "-user", "-noforward"]:
+            query = query.replace(flag, "")
+        if not query.strip():
             return await message.reply_text(_["broad_8"])
 
     IS_BROADCASTING = True
     await message.reply_text(_["broad_1"])
 
+    # Broadcast to groups
     if "-nobot" not in message.text:
-        sent = 0
-        pin = 0
-        chats = []
-        schats = await get_served_chats()
-        for chat in schats:
-            chats.append(int(chat["chat_id"]))
-        for i in chats:
+        sent = pin = 0
+        chats = [int(chat["chat_id"]) for chat in await get_served_chats()]
+        for chat_id in chats:
             try:
-                m = (
-                    await app.copy_message(chat_id=i, from_chat_id=y, message_id=x, reply_markup=reply_markup)
-                    if message.reply_to_message
-                    else await app.send_message(i, text=query)
-                )
+                if message.reply_to_message:
+                    if "-noforward" in message.text:
+                        m = await copy_message_with_entities(app, chat_id, message.reply_to_message)
+                    else:
+                        m = await app.forward_messages(chat_id, y, x)
+                else:
+                    m = await app.send_message(
+                        chat_id, 
+                        text=query,
+                        disable_web_page_preview=True
+                    )
+                
                 if "-pin" in message.text:
                     try:
                         await m.pin(disable_notification=True)
                         pin += 1
-                    except:
-                        continue
+                    except: continue
                 elif "-pinloud" in message.text:
                     try:
                         await m.pin(disable_notification=False)
                         pin += 1
-                    except:
-                        continue
+                    except: continue
                 sent += 1
                 await asyncio.sleep(0.2)
             except FloodWait as fw:
-                flood_time = int(fw.value)
-                if flood_time > 200:
-                    continue
-                await asyncio.sleep(flood_time)
-            except:
-                continue
+                await asyncio.sleep(fw.value)
+            except: continue
+        
         try:
             await message.reply_text(_["broad_3"].format(sent, pin))
-        except:
-            pass
+        except: pass
 
+    # Broadcast to users
     if "-user" in message.text:
         susr = 0
-        served_users = []
-        susers = await get_served_users()
-        for user in susers:
-            served_users.append(int(user["user_id"]))
-        for i in served_users:
+        users = [int(user["user_id"]) for user in await get_served_users()]
+        for user_id in users:
             try:
-                m = (
-                    await app.copy_message(chat_id=i, from_chat_id=y, message_id=x, reply_markup=reply_markup)
-                    if message.reply_to_message
-                    else await app.send_message(i, text=query)
-                )
+                if message.reply_to_message:
+                    if "-noforward" in message.text:
+                        m = await copy_message_with_entities(app, user_id, message.reply_to_message)
+                    else:
+                        m = await app.forward_messages(user_id, y, x)
+                else:
+                    m = await app.send_message(
+                        user_id,
+                        text=query,
+                        disable_web_page_preview=True
+                    )
                 susr += 1
                 await asyncio.sleep(0.2)
             except FloodWait as fw:
-                flood_time = int(fw.value)
-                if flood_time > 200:
-                    continue
-                await asyncio.sleep(flood_time)
-            except:
-                pass
+                await asyncio.sleep(fw.value)
+            except: pass
+        
         try:
             await message.reply_text(_["broad_4"].format(susr))
-        except:
-            pass
+        except: pass
 
+    # Broadcast via assistants
     if "-assistant" in message.text:
         aw = await message.reply_text(_["broad_5"])
         text = _["broad_6"]
@@ -185,27 +216,29 @@ async def braodcast_message(client, message, _):
             client = await get_client(num)
             async for dialog in client.get_dialogs():
                 try:
-                    await client.forward_messages(
-                        dialog.chat.id, y, x
-                    ) if message.reply_to_message else await client.send_message(
-                        dialog.chat.id, text=query
-                    )
+                    if message.reply_to_message:
+                        if "-noforward" in message.text:
+                            m = await copy_message_with_entities(client, dialog.chat.id, message.reply_to_message)
+                        else:
+                            m = await client.forward_messages(dialog.chat.id, y, x)
+                    else:
+                        m = await client.send_message(
+                            dialog.chat.id,
+                            text=query,
+                            disable_web_page_preview=True
+                        )
                     sent += 1
                     await asyncio.sleep(3)
                 except FloodWait as fw:
-                    flood_time = int(fw.value)
-                    if flood_time > 200:
-                        continue
-                    await asyncio.sleep(flood_time)
-                except:
-                    continue
+                    await asyncio.sleep(fw.value)
+                except: continue
             text += _["broad_7"].format(num, sent)
+        
         try:
             await aw.edit_text(text)
-        except:
-            pass
-    IS_BROADCASTING = False
+        except: pass
 
+    IS_BROADCASTING = False
 
 async def auto_clean():
     while not await asyncio.sleep(10):
@@ -223,8 +256,6 @@ async def auto_clean():
                     for user in authusers:
                         user_id = await alpha_to_int(user)
                         adminlist[chat_id].append(user_id)
-        except:
-            continue
-
+        except: continue
 
 asyncio.create_task(auto_clean())
