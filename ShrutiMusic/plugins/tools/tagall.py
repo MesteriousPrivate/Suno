@@ -1,8 +1,9 @@
 import asyncio
 from pyrogram import filters
-from pyrogram.enums import ChatMembersFilter
+from pyrogram.enums import ChatMembersFilter, ParseMode
 from pyrogram.errors import FloodWait
 import random
+import re
 
 from ShrutiMusic import app
 
@@ -48,6 +49,12 @@ EMOJI = [
     "🥬🍉🧁🧇",
 ]
 
+def clean_text(text):
+    """Escape markdown special characters"""
+    if not text:
+        return ""
+    return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
+
 async def is_admin(chat_id, user_id):
     admin_ids = [
         admin.user.id
@@ -55,9 +62,7 @@ async def is_admin(chat_id, user_id):
             chat_id, filter=ChatMembersFilter.ADMINISTRATORS
         )
     ]
-    if user_id in admin_ids:
-        return True
-    return False
+    return user_id in admin_ids
 
 @app.on_message(
     filters.command(["all", "allmention", "mentionall", "tagall"], prefixes=["/", "@"])
@@ -101,12 +106,10 @@ async def tag_all_users(_, message):
                 tagged_members += 1
                 usernum += 1
                 
-                # Get new emoji sequence for every 5 users
                 if usernum == 1:
                     emoji_sequence = random.choice(EMOJI)
                     emoji_index = 0
                 
-                # Use emoji for mention
                 emoji = emoji_sequence[emoji_index % len(emoji_sequence)]
                 usertxt += f"[{emoji}](tg://user?id={m.user.id}) "
                 emoji_index += 1
@@ -115,6 +118,7 @@ async def tag_all_users(_, message):
                     await replied.reply_text(
                         usertxt,
                         disable_web_page_preview=True,
+                        parse_mode=ParseMode.MARKDOWN
                     )
                     await asyncio.sleep(1)
                     usernum = 0
@@ -124,11 +128,12 @@ async def tag_all_users(_, message):
                 await replied.reply_text(
                     usertxt,
                     disable_web_page_preview=True,
+                    parse_mode=ParseMode.MARKDOWN
                 )
         else:
             usernum = 0
             usertxt = ""
-            text = message.text.split(None, 1)[1]
+            text = clean_text(message.text.split(None, 1)[1])
             
             async for m in app.get_chat_members(message.chat.id):
                 if message.chat.id not in SPAM_CHATS:
@@ -139,12 +144,10 @@ async def tag_all_users(_, message):
                 tagged_members += 1
                 usernum += 1
                 
-                # Get new emoji sequence for every 5 users
                 if usernum == 1:
                     emoji_sequence = random.choice(EMOJI)
                     emoji_index = 0
                 
-                # Use emoji for mention
                 emoji = emoji_sequence[emoji_index % len(emoji_sequence)]
                 usertxt += f"[{emoji}](tg://user?id={m.user.id}) "
                 emoji_index += 1
@@ -154,6 +157,7 @@ async def tag_all_users(_, message):
                         message.chat.id,
                         f"{text}\n{usertxt}",
                         disable_web_page_preview=True,
+                        parse_mode=ParseMode.MARKDOWN
                     )
                     await asyncio.sleep(2)
                     usernum = 0
@@ -164,9 +168,9 @@ async def tag_all_users(_, message):
                     message.chat.id,
                     f"{text}\n\n{usertxt}",
                     disable_web_page_preview=True,
+                    parse_mode=ParseMode.MARKDOWN
                 )
         
-        # Send summary message
         summary_msg = f"""
 ✅ Tagging completed!
 
@@ -211,7 +215,6 @@ async def tag_all_admins(_, message):
     tagged_admins = 0
     
     try:
-        # Get total admins count
         async for _ in app.get_chat_members(
             message.chat.id, filter=ChatMembersFilter.ADMINISTRATORS
         ):
@@ -234,12 +237,10 @@ async def tag_all_admins(_, message):
                 tagged_admins += 1
                 adminnum += 1
                 
-                # Get new emoji sequence for every 5 admins
                 if adminnum == 1:
                     emoji_sequence = random.choice(EMOJI)
                     emoji_index = 0
                 
-                # Use emoji for mention
                 emoji = emoji_sequence[emoji_index % len(emoji_sequence)]
                 admintxt += f"[{emoji}](tg://user?id={m.user.id}) "
                 emoji_index += 1
@@ -248,6 +249,7 @@ async def tag_all_admins(_, message):
                     await replied.reply_text(
                         admintxt,
                         disable_web_page_preview=True,
+                        parse_mode=ParseMode.MARKDOWN
                     )
                     await asyncio.sleep(1)
                     adminnum = 0
@@ -257,11 +259,12 @@ async def tag_all_admins(_, message):
                 await replied.reply_text(
                     admintxt,
                     disable_web_page_preview=True,
+                    parse_mode=ParseMode.MARKDOWN
                 )
         else:
             adminnum = 0
             admintxt = ""
-            text = message.text.split(None, 1)[1]
+            text = clean_text(message.text.split(None, 1)[1])
             
             async for m in app.get_chat_members(
                 message.chat.id, filter=ChatMembersFilter.ADMINISTRATORS
@@ -274,12 +277,10 @@ async def tag_all_admins(_, message):
                 tagged_admins += 1
                 adminnum += 1
                 
-                # Get new emoji sequence for every 5 admins
                 if adminnum == 1:
                     emoji_sequence = random.choice(EMOJI)
                     emoji_index = 0
                 
-                # Use emoji for mention
                 emoji = emoji_sequence[emoji_index % len(emoji_sequence)]
                 admintxt += f"[{emoji}](tg://user?id={m.user.id}) "
                 emoji_index += 1
@@ -289,6 +290,7 @@ async def tag_all_admins(_, message):
                         message.chat.id,
                         f"{text}\n{admintxt}",
                         disable_web_page_preview=True,
+                        parse_mode=ParseMode.MARKDOWN
                     )
                     await asyncio.sleep(2)
                     adminnum = 0
@@ -299,9 +301,9 @@ async def tag_all_admins(_, message):
                     message.chat.id,
                     f"{text}\n\n{admintxt}",
                     disable_web_page_preview=True,
+                    parse_mode=ParseMode.MARKDOWN
                 )
         
-        # Send summary message
         summary_msg = f"""
 ✅ Admin tagging completed!
 
