@@ -41,27 +41,17 @@ def help_pannel(_, START: Union[bool, int] = None):
             ],
             [
                 InlineKeyboardButton(text=_["H_B_15"], callback_data="help_callback hb15"),
-                InlineKeyboardButton(text=_["𝐃ᴇᴠᴇʟᴏᴘᴇʀ"], user_id=config.OWNER_ID),
+                InlineKeyboardButton(text="𝐃ᴇᴠᴇʟᴏᴘᴇʀ", url="https://t.me/WTF_WhyMeeh"),
             ],
             mark,
         ]
     )
     return upl
 
-
 def help_back_markup(_):
-    upl = InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    text=_["BACK_BUTTON"],
-                    callback_data="settings_back_helper",
-                ),
-            ]
-        ]
+    return InlineKeyboardMarkup(
+        [[InlineKeyboardButton(text=_["BACK_BUTTON"], callback_data="settings_back_helper")]]
     )
-    return upl
-
 
 def private_help_panel(_):
     buttons = [
