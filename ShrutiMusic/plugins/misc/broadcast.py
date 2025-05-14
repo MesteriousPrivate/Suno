@@ -1,6 +1,6 @@
 import asyncio
 from pyrogram import filters
-from pyrogram.enums import ChatMembersFilter, MessageEntityType
+from pyrogram.enums import ChatMembersFilter, MessageEntityType, ParseMode
 from pyrogram.errors import FloodWait, ChatWriteForbidden, UserIsBlocked, PeerIdInvalid
 from pyrogram.types import MessageEntity, InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -40,35 +40,27 @@ class BroadcastStats:
 
 async def copy_message_with_entities(client, chat_id, original_message):
     """Copy message with all formatting and buttons (no forward tag)"""
-    # Extract text content and parse to HTML if entities exist
+    # Extract text content
     text = original_message.text or original_message.caption or ""
     entities = original_message.entities or original_message.caption_entities
     
-    # Convert entities to HTML format for better compatibility
-    if entities:
-        try:
-            from pyrogram.parser import Parser
-            text = Parser.parse(text, entities, "html")
-        except ImportError:
-            # Fallback if parser not available
-            pass
-    
+    # Base kwargs for all message types
     kwargs = {
         "chat_id": chat_id,
-        "disable_web_page_preview": True,  # Disable link preview
-        "parse_mode": "html"  # Use HTML parsing instead of entities
+        "parse_mode": ParseMode.HTML  # Using enum instead of string
     }
     
-    # Handle reply markup (buttons) properly
+    # Handle reply markup (buttons)
     if original_message.reply_markup:
         kwargs["reply_markup"] = original_message.reply_markup
     
     try:
         if original_message.photo:
+            # For photos, don't include disable_web_page_preview
             return await client.send_photo(
                 photo=original_message.photo.file_id,
                 caption=text,
-                **kwargs
+                **{k: v for k, v in kwargs.items() if k != "disable_web_page_preview"}
             )
         elif original_message.video:
             return await client.send_video(
@@ -95,7 +87,7 @@ async def copy_message_with_entities(client, chat_id, original_message):
                 **kwargs
             )
         elif original_message.sticker:
-            # Stickers don't support captions, so we send separately if needed
+            # Stickers don't support captions
             sent = await client.send_sticker(
                 chat_id=chat_id,
                 sticker=original_message.sticker.file_id
@@ -104,6 +96,8 @@ async def copy_message_with_entities(client, chat_id, original_message):
                 await client.send_message(chat_id=chat_id, text=text, **kwargs)
             return sent
         else:
+            # For text messages, include disable_web_page_preview
+            kwargs["disable_web_page_preview"] = True
             return await client.send_message(
                 chat_id=chat_id,
                 text=text,
@@ -122,16 +116,15 @@ async def send_progress_message(message, stats, title="Broadcast Progress"):
     progress_text += f"📊 Progress: {stats.successful + stats.failed}/{stats.total_targets}"
     
     try:
-        return await message.edit_text(progress_text, parse_mode="html")
+        return await message.edit_text(progress_text, parse_mode=ParseMode.HTML)
     except:
-        return await message.reply_text(progress_text, parse_mode="html")
+        return await message.reply_text(progress_text, parse_mode=ParseMode.HTML)
 
 @app.on_message(filters.command(["broadcast", "bcast"]) & SUDOERS)
 @language
 async def broadcast_message(client, message, _):
     global IS_BROADCASTING
     
-    # Check if broadcast is already running
     if IS_BROADCASTING:
         return await message.reply_text("⚠️ A broadcast is already in progress. Please wait until it completes.")
     
@@ -145,16 +138,16 @@ async def broadcast_message(client, message, _):
         "-assistant": False,
         "-user": False,
         "-noforward": False,
-        "-preview": False,    # New flag to enable link previews
-        "-silent": False,     # New flag for silent mode (less status updates)
-        "-dryrun": False      # New flag for test mode
+        "-preview": False,
+        "-silent": False,
+        "-dryrun": False
     }
     
     for flag in flags:
         if flag in message.text:
             flags[flag] = True
             
-    # Check if we need to broadcast through a specific assistant number
+    # Check assistant number
     assistant_num = None
     command_text = message.text.lower()
     for part in command_text.split():
@@ -165,7 +158,7 @@ async def broadcast_message(client, message, _):
             except ValueError:
                 pass
     
-    # Handle -wfchat and -wfuser flags (legacy compatibility)
+    # Handle -wfchat and -wfuser flags
     if flags["-wfchat"] or flags["-wfuser"]:
         if not message.reply_to_message:
             return await message.reply_text("❌ Please reply to a message for broadcasting.")
@@ -189,7 +182,6 @@ async def broadcast_message(client, message, _):
                     stats.successful += 1
                 except FloodWait as fw:
                     await asyncio.sleep(fw.value)
-                    # Try again after waiting
                     try:
                         if flags["-noforward"]:
                             await copy_message_with_entities(app, i, message.reply_to_message)
@@ -204,13 +196,12 @@ async def broadcast_message(client, message, _):
                     error_type = type(e).__name__
                     stats.add_error(error_type)
                 
-                # Update progress every 25 chats or at the end
                 if not flags["-silent"] and (stats.successful + stats.failed) % 25 == 0:
                     await send_progress_message(progress_msg, stats, "Chat Broadcast Progress")
                 
                 await asyncio.sleep(0.2)
             
-            await message.reply_text(f"✅ Broadcast to chats completed!\n\n{stats.get_report()}", parse_mode="html")
+            await message.reply_text(f"✅ Broadcast to chats completed!\n\n{stats.get_report()}", parse_mode=ParseMode.HTML)
 
         if flags["-wfuser"]:
             stats = BroadcastStats()
@@ -242,18 +233,17 @@ async def broadcast_message(client, message, _):
                     error_type = type(e).__name__
                     stats.add_error(error_type)
                 
-                # Update progress every 25 users or at the end
                 if not flags["-silent"] and (stats.successful + stats.failed) % 25 == 0:
                     await send_progress_message(progress_msg, stats, "User Broadcast Progress")
                 
                 await asyncio.sleep(0.2)
             
-            await message.reply_text(f"✅ Broadcast to users completed!\n\n{stats.get_report()}", parse_mode="html")
+            await message.reply_text(f"✅ Broadcast to users completed!\n\n{stats.get_report()}", parse_mode=ParseMode.HTML)
 
         IS_BROADCASTING = False
         return
 
-    # Main broadcast handler (improved version)
+    # Main broadcast handler
     x = None
     y = None
     query = None
@@ -262,7 +252,6 @@ async def broadcast_message(client, message, _):
         x = message.reply_to_message.id
         y = message.chat.id
         
-        # For dry-run testing mode
         if flags["-dryrun"]:
             return await message.reply_text(
                 "🧪 DRY RUN MODE\n\n"
@@ -276,11 +265,9 @@ async def broadcast_message(client, message, _):
         
         query = message.text.split(None, 1)[1]
         
-        # Remove all flags from query
         for flag in flags:
             query = query.replace(flag, "")
         
-        # Remove assistant number flag
         if assistant_num is not None:
             query = query.replace(f"-assistant={assistant_num}", "")
             
@@ -289,7 +276,6 @@ async def broadcast_message(client, message, _):
         if not query:
             return await message.reply_text(_["broad_8"])
         
-        # For dry-run testing mode
         if flags["-dryrun"]:
             return await message.reply_text(
                 "🧪 DRY RUN MODE\n\n"
@@ -321,7 +307,8 @@ async def broadcast_message(client, message, _):
                     m = await app.send_message(
                         chat_id, 
                         text=query,
-                        disable_web_page_preview=not flags["-preview"]
+                        disable_web_page_preview=not flags["-preview"],
+                        parse_mode=ParseMode.HTML
                     )
                 
                 if flags["-pin"] or flags["-pinloud"]:
@@ -335,7 +322,6 @@ async def broadcast_message(client, message, _):
                 sent += 1
                 chats_stats.successful += 1
                 
-                # Update progress periodically
                 if not flags["-silent"] and chats_stats.successful % 25 == 0:
                     await send_progress_message(progress_msg, chats_stats, "Chat Broadcast Progress")
                     
@@ -343,7 +329,6 @@ async def broadcast_message(client, message, _):
             except FloodWait as fw:
                 await asyncio.sleep(fw.value)
                 try:
-                    # Try again after flood wait
                     if message.reply_to_message:
                         if flags["-noforward"]:
                             m = await copy_message_with_entities(app, chat_id, message.reply_to_message)
@@ -353,7 +338,8 @@ async def broadcast_message(client, message, _):
                         m = await app.send_message(
                             chat_id, 
                             text=query,
-                            disable_web_page_preview=not flags["-preview"]
+                            disable_web_page_preview=not flags["-preview"],
+                            parse_mode=ParseMode.HTML
                         )
                     chats_stats.successful += 1
                 except Exception as e:
@@ -376,7 +362,7 @@ async def broadcast_message(client, message, _):
                 f"- Sent: {sent}\n"
                 f"- Pinned: {pin}\n\n"
                 f"{chats_stats.get_report()}",
-                parse_mode="html"
+                parse_mode=ParseMode.HTML
             )
         except:
             pass
@@ -401,12 +387,12 @@ async def broadcast_message(client, message, _):
                     m = await app.send_message(
                         user_id,
                         text=query,
-                        disable_web_page_preview=not flags["-preview"]
+                        disable_web_page_preview=not flags["-preview"],
+                        parse_mode=ParseMode.HTML
                     )
                 susr += 1
                 user_stats.successful += 1
                 
-                # Update progress periodically
                 if not flags["-silent"] and user_stats.successful % 25 == 0:
                     await send_progress_message(progress_msg, user_stats, "User Broadcast Progress")
                     
@@ -414,7 +400,6 @@ async def broadcast_message(client, message, _):
             except FloodWait as fw:
                 await asyncio.sleep(fw.value)
                 try:
-                    # Try again after flood wait
                     if message.reply_to_message:
                         if flags["-noforward"]:
                             m = await copy_message_with_entities(app, user_id, message.reply_to_message)
@@ -424,7 +409,8 @@ async def broadcast_message(client, message, _):
                         m = await app.send_message(
                             user_id,
                             text=query,
-                            disable_web_page_preview=not flags["-preview"]
+                            disable_web_page_preview=not flags["-preview"],
+                            parse_mode=ParseMode.HTML
                         )
                     user_stats.successful += 1
                 except:
@@ -445,7 +431,7 @@ async def broadcast_message(client, message, _):
                 f"📊 Stats:\n"
                 f"- Successfully sent: {susr}\n\n"
                 f"{user_stats.get_report()}",
-                parse_mode="html"
+                parse_mode=ParseMode.HTML
             )
         except:
             pass
@@ -457,7 +443,6 @@ async def broadcast_message(client, message, _):
         from ShrutiMusic.core.userbot import assistants
         
         if assistant_num is not None:
-            # Broadcast using only the specified assistant
             if assistant_num in assistants:
                 assistant_list = [assistant_num]
             else:
@@ -465,7 +450,6 @@ async def broadcast_message(client, message, _):
                 IS_BROADCASTING = False
                 return
         else:
-            # Broadcast using all assistants
             assistant_list = assistants
             
         for num in assistant_list:
@@ -492,13 +476,13 @@ async def broadcast_message(client, message, _):
                             m = await client.send_message(
                                 dialog_id,
                                 text=query,
-                                disable_web_page_preview=not flags["-preview"]
+                                disable_web_page_preview=not flags["-preview"],
+                                parse_mode=ParseMode.HTML
                             )
                         sent += 1
-                        await asyncio.sleep(0.5)  # Slightly longer delay for assistants
+                        await asyncio.sleep(0.5)
                     except FloodWait as fw:
                         await asyncio.sleep(fw.value)
-                        # Try again after waiting
                         try:
                             if message.reply_to_message:
                                 if flags["-noforward"]:
@@ -509,7 +493,8 @@ async def broadcast_message(client, message, _):
                                 m = await client.send_message(
                                     dialog_id,
                                     text=query,
-                                    disable_web_page_preview=not flags["-preview"]
+                                    disable_web_page_preview=not flags["-preview"],
+                                    parse_mode=ParseMode.HTML
                                 )
                             sent += 1
                         except:
@@ -530,7 +515,7 @@ async def broadcast_message(client, message, _):
         except:
             await message.reply_text(text)
 
-    # Show broadcast completion message with button to see detailed stats
+    # Show broadcast completion message
     try:
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("✅ OK", callback_data="close")]
@@ -538,7 +523,7 @@ async def broadcast_message(client, message, _):
         await status_message.edit_text(
             "<b>✅ Broadcast completed successfully!</b>",
             reply_markup=keyboard,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
     except:
         pass
@@ -583,7 +568,7 @@ async def broadcast_help(client, message):
 - <code>/broadcastcancel</code> - Cancel ongoing broadcast
 - <code>/broadcasthelp</code> - Show this help message
 """
-    await message.reply_text(help_text, parse_mode="html")
+    await message.reply_text(help_text, parse_mode=ParseMode.HTML)
 
 async def auto_clean():
     while not await asyncio.sleep(10):
