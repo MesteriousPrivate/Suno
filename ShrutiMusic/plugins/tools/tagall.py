@@ -93,19 +93,22 @@ async def process_members(chat_id, members, text=None, replied=None):
                         parse_mode=ParseMode.MARKDOWN
                     )
                 else:
+                    # Using HTML for bold text and invisible space for empty line
+                    separator = "\n‎\n"  # Invisible space creates empty line
+                    message_content = f"<b>{text}</b>{separator}{usertxt}" if text else usertxt
                     await app.send_message(
                         chat_id,
-                        f"{text}\n{usertxt}",
+                        message_content,
                         disable_web_page_preview=True,
-                        parse_mode=ParseMode.MARKDOWN
+                        parse_mode=ParseMode.HTML
                     )
-                await asyncio.sleep(2)  # Reduced sleep time to 2 seconds
+                await asyncio.sleep(2)
                 usernum = 0
                 usertxt = ""
                 emoji_sequence = random.choice(EMOJI)
                 emoji_index = 0
             except FloodWait as e:
-                await asyncio.sleep(e.value + 2)  # Extra buffer time
+                await asyncio.sleep(e.value + 2)
             except Exception as e:
                 await app.send_message(chat_id, f"Error while tagging: {str(e)}")
                 continue
@@ -119,11 +122,14 @@ async def process_members(chat_id, members, text=None, replied=None):
                     parse_mode=ParseMode.MARKDOWN
                 )
             else:
+                # Same HTML formatting for final batch
+                separator = "\n‎\n"  # Invisible space creates empty line
+                message_content = f"<b>{text}</b>{separator}{usertxt}" if text else usertxt
                 await app.send_message(
                     chat_id,
-                    f"{text}\n\n{usertxt}",
+                    message_content,
                     disable_web_page_preview=True,
-                    parse_mode=ParseMode.MARKDOWN
+                    parse_mode=ParseMode.HTML
                 )
         except Exception as e:
             await app.send_message(chat_id, f"Error sending final batch: {str(e)}")
@@ -150,7 +156,6 @@ async def tag_all_users(_, message):
         )  
     
     try:  
-        # Get all members at once to avoid multiple iterations
         members = []
         async for m in app.get_chat_members(message.chat.id):
             members.append(m)
@@ -210,7 +215,6 @@ async def tag_all_admins(_, message):
         )  
     
     try:  
-        # Get all admins at once
         members = []
         async for m in app.get_chat_members(
             message.chat.id, filter=ChatMembersFilter.ADMINISTRATORS  
