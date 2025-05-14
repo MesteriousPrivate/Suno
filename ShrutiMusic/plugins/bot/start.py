@@ -88,7 +88,7 @@ async def start_pm(client, message: Message, _):
     else:
         # Sticker send & delete
         sticker = await message.reply_sticker("CAACAgUAAxkBAAIQJGgkj5vewi7LZoP7mkgVFnsepm7FAALUEwAC1pghVT6MEA_vcmE6HgQ")
-        await asyncio.sleep(5)
+        await asyncio.sleep(4)
         await sticker.delete()
 
         # Welcome message
