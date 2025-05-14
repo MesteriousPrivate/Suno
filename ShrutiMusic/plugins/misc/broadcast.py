@@ -1,8 +1,8 @@
 import asyncio
 from pyrogram import filters
-from pyrogram.enums import ChatMembersFilter, MessageEntityType, ParseMode
+from pyrogram.enums import ChatMembersFilter, ParseMode
 from pyrogram.errors import FloodWait, ChatWriteForbidden, UserIsBlocked, PeerIdInvalid
-from pyrogram.types import MessageEntity, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from ShrutiMusic import app
 from ShrutiMusic.misc import SUDOERS
@@ -19,14 +19,13 @@ from config import adminlist
 
 IS_BROADCASTING = False
 
-# Stats counters for advanced broadcasting
 class BroadcastStats:
     def __init__(self):
         self.total_targets = 0
         self.successful = 0
         self.failed = 0
         self.pinned = 0
-        self.errors = {}  # To track different error types
+        self.errors = {}
         
     def add_error(self, error_type):
         if error_type in self.errors:
@@ -39,68 +38,70 @@ class BroadcastStats:
         return f"✅ Successful: {self.successful}\n❌ Failed: {self.failed}\n📌 Pinned: {self.pinned}\n\n<b>Error Breakdown:</b>\n{error_report if self.errors else 'No errors'}"
 
 async def copy_message_with_entities(client, chat_id, original_message):
-    """Copy message with all formatting and buttons (no forward tag)"""
-    # Extract text content
+    """Copy message with all formatting including clickable links and usernames"""
     text = original_message.text or original_message.caption or ""
-    entities = original_message.entities or original_message.caption_entities
+    entities = original_message.entities or original_message.caption_entities or []
     
-    # Base kwargs for all message types
     kwargs = {
         "chat_id": chat_id,
-        "parse_mode": ParseMode.HTML  # Using enum instead of string
+        "reply_markup": original_message.reply_markup if original_message.reply_markup else None
     }
-    
-    # Handle reply markup (buttons)
-    if original_message.reply_markup:
-        kwargs["reply_markup"] = original_message.reply_markup
-    
+
     try:
         if original_message.photo:
-            # For photos, don't include disable_web_page_preview
             return await client.send_photo(
                 photo=original_message.photo.file_id,
                 caption=text,
-                **{k: v for k, v in kwargs.items() if k != "disable_web_page_preview"}
+                caption_entities=entities,
+                **kwargs
             )
         elif original_message.video:
             return await client.send_video(
                 video=original_message.video.file_id,
                 caption=text,
+                caption_entities=entities,
                 **kwargs
             )
         elif original_message.audio:
             return await client.send_audio(
                 audio=original_message.audio.file_id,
                 caption=text,
+                caption_entities=entities,
                 **kwargs
             )
         elif original_message.document:
             return await client.send_document(
                 document=original_message.document.file_id,
                 caption=text,
+                caption_entities=entities,
                 **kwargs
             )
         elif original_message.animation:
             return await client.send_animation(
                 animation=original_message.animation.file_id,
                 caption=text,
+                caption_entities=entities,
                 **kwargs
             )
         elif original_message.sticker:
-            # Stickers don't support captions
             sent = await client.send_sticker(
                 chat_id=chat_id,
                 sticker=original_message.sticker.file_id
             )
             if text:
-                await client.send_message(chat_id=chat_id, text=text, **kwargs)
+                await client.send_message(
+                    chat_id=chat_id,
+                    text=text,
+                    entities=entities,
+                    disable_web_page_preview=True
+                )
             return sent
         else:
-            # For text messages, include disable_web_page_preview
-            kwargs["disable_web_page_preview"] = True
             return await client.send_message(
                 chat_id=chat_id,
                 text=text,
+                entities=entities,
+                disable_web_page_preview=True,
                 **kwargs
             )
     except Exception as e:
@@ -108,7 +109,6 @@ async def copy_message_with_entities(client, chat_id, original_message):
         raise e
 
 async def send_progress_message(message, stats, title="Broadcast Progress"):
-    """Send or update a progress message during broadcasting"""
     progress_text = f"<b>{title}</b>\n\n"
     progress_text += f"🎯 Total targets: {stats.total_targets}\n"
     progress_text += f"✅ Sent successfully: {stats.successful}\n"
@@ -128,7 +128,6 @@ async def broadcast_message(client, message, _):
     if IS_BROADCASTING:
         return await message.reply_text("⚠️ A broadcast is already in progress. Please wait until it completes.")
     
-    # Parse command flags
     flags = {
         "-wfchat": False,
         "-wfuser": False,
@@ -147,7 +146,6 @@ async def broadcast_message(client, message, _):
         if flag in message.text:
             flags[flag] = True
             
-    # Check assistant number
     assistant_num = None
     command_text = message.text.lower()
     for part in command_text.split():
@@ -158,7 +156,6 @@ async def broadcast_message(client, message, _):
             except ValueError:
                 pass
     
-    # Handle -wfchat and -wfuser flags
     if flags["-wfchat"] or flags["-wfuser"]:
         if not message.reply_to_message:
             return await message.reply_text("❌ Please reply to a message for broadcasting.")
@@ -243,7 +240,6 @@ async def broadcast_message(client, message, _):
         IS_BROADCASTING = False
         return
 
-    # Main broadcast handler
     x = None
     y = None
     query = None
@@ -287,7 +283,6 @@ async def broadcast_message(client, message, _):
     IS_BROADCASTING = True
     status_message = await message.reply_text(_["broad_1"])
 
-    # Broadcast to groups
     if not flags["-nobot"]:
         sent = pin = 0
         chats_stats = BroadcastStats()
@@ -367,7 +362,6 @@ async def broadcast_message(client, message, _):
         except:
             pass
 
-    # Broadcast to users
     if flags["-user"]:
         user_stats = BroadcastStats()
         susr = 0
@@ -436,7 +430,6 @@ async def broadcast_message(client, message, _):
         except:
             pass
 
-    # Broadcast via assistants
     if flags["-assistant"]:
         aw = await message.reply_text(_["broad_5"])
         text = _["broad_6"]
@@ -515,7 +508,6 @@ async def broadcast_message(client, message, _):
         except:
             await message.reply_text(text)
 
-    # Show broadcast completion message
     try:
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("✅ OK", callback_data="close")]
