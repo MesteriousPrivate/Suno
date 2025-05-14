@@ -54,7 +54,10 @@ async def copy_message_with_entities(client, chat_id, original_message):
     
     # Handle entities for proper text formatting
     if entities:
-        kwargs["entities" if original_message.text else "caption_entities"] = entities
+        if original_message.text:
+            kwargs["entities"] = entities
+        else:
+            kwargs["caption_entities"] = entities
     
     try:
         if original_message.photo:
@@ -98,6 +101,7 @@ async def copy_message_with_entities(client, chat_id, original_message):
             return sent
         else:
             return await client.send_message(
+                chat_id=chat_id,
                 text=text,
                 **kwargs
             )
