@@ -36,28 +36,32 @@ class BroadcastStats:
             
     def get_report(self):
         error_report = "\n".join([f"• {err}: {count}" for err, count in self.errors.items()])
-        return f"✅ Successful: {self.successful}\n❌ Failed: {self.failed}\n📌 Pinned: {self.pinned}\n\n**Error Breakdown:**\n{error_report if self.errors else 'No errors'}"
+        return f"✅ Successful: {self.successful}\n❌ Failed: {self.failed}\n📌 Pinned: {self.pinned}\n\n<b>Error Breakdown:</b>\n{error_report if self.errors else 'No errors'}"
 
 async def copy_message_with_entities(client, chat_id, original_message):
     """Copy message with all formatting and buttons (no forward tag)"""
+    # Extract text content and parse to HTML if entities exist
     text = original_message.text or original_message.caption or ""
     entities = original_message.entities or original_message.caption_entities
+    
+    # Convert entities to HTML format for better compatibility
+    if entities:
+        try:
+            from pyrogram.parser import Parser
+            text = Parser.parse(text, entities, "html")
+        except ImportError:
+            # Fallback if parser not available
+            pass
     
     kwargs = {
         "chat_id": chat_id,
         "disable_web_page_preview": True,  # Disable link preview
+        "parse_mode": "html"  # Use HTML parsing instead of entities
     }
     
     # Handle reply markup (buttons) properly
     if original_message.reply_markup:
         kwargs["reply_markup"] = original_message.reply_markup
-    
-    # Handle entities for proper text formatting
-    if entities:
-        if original_message.text:
-            kwargs["entities"] = entities
-        else:
-            kwargs["caption_entities"] = entities
     
     try:
         if original_message.photo:
@@ -106,21 +110,21 @@ async def copy_message_with_entities(client, chat_id, original_message):
                 **kwargs
             )
     except Exception as e:
-        print(f"Error in copy_message: {str(e)}")
+        print(f"Error in copy_message: {str(e)} for chat_id {chat_id}")
         raise e
 
 async def send_progress_message(message, stats, title="Broadcast Progress"):
     """Send or update a progress message during broadcasting"""
-    progress_text = f"**{title}**\n\n"
+    progress_text = f"<b>{title}</b>\n\n"
     progress_text += f"🎯 Total targets: {stats.total_targets}\n"
     progress_text += f"✅ Sent successfully: {stats.successful}\n"
     progress_text += f"❌ Failed: {stats.failed}\n"
     progress_text += f"📊 Progress: {stats.successful + stats.failed}/{stats.total_targets}"
     
     try:
-        return await message.edit_text(progress_text)
+        return await message.edit_text(progress_text, parse_mode="html")
     except:
-        return await message.reply_text(progress_text)
+        return await message.reply_text(progress_text, parse_mode="html")
 
 @app.on_message(filters.command(["broadcast", "bcast"]) & SUDOERS)
 @language
@@ -206,7 +210,7 @@ async def broadcast_message(client, message, _):
                 
                 await asyncio.sleep(0.2)
             
-            await message.reply_text(f"✅ Broadcast to chats completed!\n\n{stats.get_report()}")
+            await message.reply_text(f"✅ Broadcast to chats completed!\n\n{stats.get_report()}", parse_mode="html")
 
         if flags["-wfuser"]:
             stats = BroadcastStats()
@@ -244,7 +248,7 @@ async def broadcast_message(client, message, _):
                 
                 await asyncio.sleep(0.2)
             
-            await message.reply_text(f"✅ Broadcast to users completed!\n\n{stats.get_report()}")
+            await message.reply_text(f"✅ Broadcast to users completed!\n\n{stats.get_report()}", parse_mode="html")
 
         IS_BROADCASTING = False
         return
@@ -371,7 +375,8 @@ async def broadcast_message(client, message, _):
                 f"📊 Stats:\n"
                 f"- Sent: {sent}\n"
                 f"- Pinned: {pin}\n\n"
-                f"{chats_stats.get_report()}"
+                f"{chats_stats.get_report()}",
+                parse_mode="html"
             )
         except:
             pass
@@ -439,7 +444,8 @@ async def broadcast_message(client, message, _):
                 f"✅ Broadcast to users completed!\n\n"
                 f"📊 Stats:\n"
                 f"- Successfully sent: {susr}\n\n"
-                f"{user_stats.get_report()}"
+                f"{user_stats.get_report()}",
+                parse_mode="html"
             )
         except:
             pass
@@ -530,8 +536,9 @@ async def broadcast_message(client, message, _):
             [InlineKeyboardButton("✅ OK", callback_data="close")]
         ])
         await status_message.edit_text(
-            "✅ Broadcast completed successfully!",
-            reply_markup=keyboard
+            "<b>✅ Broadcast completed successfully!</b>",
+            reply_markup=keyboard,
+            parse_mode="html"
         )
     except:
         pass
@@ -550,33 +557,33 @@ async def cancel_broadcast(client, message):
 @app.on_message(filters.command("broadcasthelp") & SUDOERS)
 async def broadcast_help(client, message):
     help_text = """
-**📡 Broadcast Command Help**
+<b>📡 Broadcast Command Help</b>
 
-**Basic Usage:**
-- `/broadcast` - Reply to a message to broadcast it
-- `/broadcast [text]` - Broadcast text message
+<b>Basic Usage:</b>
+- <code>/broadcast</code> - Reply to a message to broadcast it
+- <code>/broadcast [text]</code> - Broadcast text message
 
-**Available Flags:**
-- `-nobot` - Skip broadcasting to chats
-- `-user` - Broadcast to users
-- `-pin` - Pin message in chats (silent)
-- `-pinloud` - Pin message in chats (with notification)
-- `-assistant` - Broadcast via assistant accounts
-- `-assistant=X` - Broadcast via specific assistant number
-- `-noforward` - Send without forward tag
-- `-preview` - Enable link previews
-- `-silent` - Fewer progress updates
-- `-dryrun` - Test broadcast without sending
+<b>Available Flags:</b>
+- <code>-nobot</code> - Skip broadcasting to chats
+- <code>-user</code> - Broadcast to users
+- <code>-pin</code> - Pin message in chats (silent)
+- <code>-pinloud</code> - Pin message in chats (with notification)
+- <code>-assistant</code> - Broadcast via assistant accounts
+- <code>-assistant=X</code> - Broadcast via specific assistant number
+- <code>-noforward</code> - Send without forward tag
+- <code>-preview</code> - Enable link previews
+- <code>-silent</code> - Fewer progress updates
+- <code>-dryrun</code> - Test broadcast without sending
 
-**Legacy Commands (Compatible):**
-- `/broadcast -wfchat` - Broadcast to chats
-- `/broadcast -wfuser` - Broadcast to users
+<b>Legacy Commands (Compatible):</b>
+- <code>/broadcast -wfchat</code> - Broadcast to chats
+- <code>/broadcast -wfuser</code> - Broadcast to users
 
-**Admin Commands:**
-- `/broadcastcancel` - Cancel ongoing broadcast
-- `/broadcasthelp` - Show this help message
+<b>Admin Commands:</b>
+- <code>/broadcastcancel</code> - Cancel ongoing broadcast
+- <code>/broadcasthelp</code> - Show this help message
 """
-    await message.reply_text(help_text)
+    await message.reply_text(help_text, parse_mode="html")
 
 async def auto_clean():
     while not await asyncio.sleep(10):
