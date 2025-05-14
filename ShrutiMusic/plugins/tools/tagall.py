@@ -49,12 +49,6 @@ EMOJI = [
     "🥬🍉🧁🧇",
 ]
 
-def clean_text(text):
-    """Escape markdown special characters"""
-    if not text:
-        return ""
-    return re.sub(r'([_*\[\]()~`>#+-=|{}.!])', r'\\\1', text)
-
 async def is_admin(chat_id, user_id):
     admin_ids = [
         admin.user.id
@@ -81,7 +75,7 @@ async def process_members(chat_id, members, text=None, replied=None):
         usernum += 1
         
         emoji = emoji_sequence[emoji_index % len(emoji_sequence)]
-        usertxt += f"[{emoji}](tg://user?id={member.user.id}) "
+        usertxt += f'<a href="tg://user?id={member.user.id}">{emoji}</a> '
         emoji_index += 1
         
         if usernum == 5:
@@ -90,11 +84,10 @@ async def process_members(chat_id, members, text=None, replied=None):
                     await replied.reply_text(
                         usertxt,
                         disable_web_page_preview=True,
-                        parse_mode=ParseMode.MARKDOWN
+                        parse_mode=ParseMode.HTML
                     )
                 else:
-                    # Using HTML for bold text and invisible space for empty line
-                    separator = "\n‎\n"  # Invisible space creates empty line
+                    separator = "\n‎\n"
                     message_content = f"<b>{text}</b>{separator}{usertxt}" if text else usertxt
                     await app.send_message(
                         chat_id,
@@ -119,11 +112,10 @@ async def process_members(chat_id, members, text=None, replied=None):
                 await replied.reply_text(
                     usertxt,
                     disable_web_page_preview=True,
-                    parse_mode=ParseMode.MARKDOWN
+                    parse_mode=ParseMode.HTML
                 )
             else:
-                # Same HTML formatting for final batch
-                separator = "\n‎\n"  # Invisible space creates empty line
+                separator = "\n‎\n"
                 message_content = f"<b>{text}</b>{separator}{usertxt}" if text else usertxt
                 await app.send_message(
                     chat_id,
@@ -145,15 +137,11 @@ async def tag_all_users(_, message):
         return await message.reply_text("Only admins can use this command.")
 
     if message.chat.id in SPAM_CHATS:  
-        return await message.reply_text(  
-            "Tagging process is already running. Use /cancel to stop it."  
-        )  
+        return await message.reply_text("Tagging process is already running. Use /cancel to stop it.")  
     
     replied = message.reply_to_message  
     if len(message.command) < 2 and not replied:  
-        return await message.reply_text(  
-            "Give some text to tag all, like: `@all Hi Friends`"  
-        )  
+        return await message.reply_text("Give some text to tag all, like: `@all Hi Friends`")  
     
     try:  
         members = []
@@ -165,7 +153,7 @@ async def tag_all_users(_, message):
         
         text = None
         if not replied:
-            text = clean_text(message.text.split(None, 1)[1])
+            text = message.text.split(None, 1)[1].strip()
         
         tagged_members = await process_members(
             message.chat.id,
@@ -204,15 +192,11 @@ async def tag_all_admins(_, message):
         return await message.reply_text("Only admins can use this command.")  
 
     if message.chat.id in SPAM_CHATS:  
-        return await message.reply_text(  
-            "Tagging process is already running. Use /cancel to stop it."  
-        )  
+        return await message.reply_text("Tagging process is already running. Use /cancel to stop it.")  
     
     replied = message.reply_to_message  
     if len(message.command) < 2 and not replied:  
-        return await message.reply_text(  
-            "Give some text to tag admins, like: `@admins Hi Friends`"  
-        )  
+        return await message.reply_text("Give some text to tag admins, like: `@admins Hi Friends`")  
     
     try:  
         members = []
@@ -226,7 +210,7 @@ async def tag_all_admins(_, message):
         
         text = None
         if not replied:
-            text = clean_text(message.text.split(None, 1)[1])
+            text = message.text.split(None, 1)[1].strip()
         
         tagged_admins = await process_members(
             message.chat.id,
@@ -290,10 +274,9 @@ HELP = """
 /stopmention or @stopmention | /cancel or @cancel | /offmention or @offmention | /mentionoff or @mentionoff | /cancelall or @cancelall - Stop any running tagging process
 
 Note:
-
 1. These commands can only be used by admins
-2. The bot and assistant must be admins in your group
-3. Users will be tagged with random emojis that link to their profiles
-4. After completion, you'll get a summary with counts
-5. Tags 5 users at a time with unique emoji sequence for each batch
+2. The bot must be admin in your group
+3. Users will be tagged with clickable emoji links
+4. Tags 5 users at a time with unique emoji sequence
+5. Includes summary after completion
 """
