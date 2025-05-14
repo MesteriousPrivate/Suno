@@ -53,7 +53,7 @@ def clean_text(text):
     """Escape markdown special characters"""
     if not text:
         return ""
-    return re.sub(r'([_*()~`>#+-=|{}.!])', r'\\1', text)
+    return re.sub(r'([_*\[\]()~`>#+-=|{}.!])', r'\\\1', text)
 
 async def is_admin(chat_id, user_id):
     admin_ids = [
