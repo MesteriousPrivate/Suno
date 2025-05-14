@@ -1,4 +1,5 @@
 import time
+import asyncio
 
 from pyrogram import filters
 from pyrogram.enums import ChatType
@@ -85,6 +86,12 @@ async def start_pm(client, message: Message, _):
                     text=f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>ᴛʀᴀᴄᴋ ɪɴғᴏʀᴍᴀᴛɪᴏɴ</b>.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
                 )
     else:
+        # Sticker send & delete
+        sticker = await message.reply_sticker("CAACAgUAAxkBAAIQJGgkj5vewi7LZoP7mkgVFnsepm7FAALUEwAC1pghVT6MEA_vcmE6HgQ")
+        await asyncio.sleep(5)
+        await sticker.delete()
+
+        # Welcome message
         out = private_panel(_)
         UP, CPU, RAM, DISK = await bot_sys_stats()
         await message.reply_photo(
