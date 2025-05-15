@@ -5,7 +5,7 @@ from ShrutiMusic import app
 import asyncio
 from ShrutiMusic.misc import SUDOERS
 from config import MONGO_DB_URI
-from pyrogram.enums import ChatMembersFilter
+from pyrogram.enums import ChatMembersFilter, ParseMode
 from pyrogram.errors import (
     ChatAdminRequired,
     UserNotParticipant,
@@ -21,14 +21,14 @@ async def set_forcesub(client: Client, message: Message):
 
     member = await client.get_chat_member(chat_id, user_id)
     if not (member.status == "creator" or user_id in SUDOERS):
-        return await message.reply_text("**ᴏɴʟʏ ɢʀᴏᴜᴘ ᴏᴡɴᴇʀs ᴏʀ sᴜᴅᴏᴇʀs ᴄᴀɴ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ.**")
+        return await message.reply_text("<b>Only group owners or sudoers can use this command.</b>", parse_mode=ParseMode.HTML)
 
     if len(message.command) == 2 and message.command[1].lower() in ["off", "disable"]:
         forcesub_collection.delete_one({"chat_id": chat_id})
-        return await message.reply_text("**ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ʜᴀs ʙᴇᴇɴ ᴅɪsᴀʙʟᴇᴅ ғᴏʀ ᴛʜɪs ɢʀᴏᴜᴘ.**")
+        return await message.reply_text("<b>Force subscription has been disabled for this group.</b>", parse_mode=ParseMode.HTML)
 
     if len(message.command) != 2:
-        return await message.reply_text("**ᴜsᴀɢᴇ: /ғsᴜʙ <ᴄʜᴀɴɴᴇʟ ᴜsᴇʀɴᴀᴍᴇ ᴏʀ ɪᴅ> ᴏʀ /ғsᴜʙ ᴏғғ ᴛᴏ ᴅɪsᴀʙʟᴇ**")
+        return await message.reply_text("<b>Usage: /fsub <channel username or id> or /fsub off to disable</b>", parse_mode=ParseMode.HTML)
 
     channel_input = message.command[1]
 
@@ -43,10 +43,14 @@ async def set_forcesub(client: Client, message: Message):
             upsert=True
         )
 
-        await message.reply_text(f"**🎉 Force subscription set to channel:** [{channel_info.title}](https://t.me/{channel_username})")
+        await message.reply_text(
+            f"<b>🎉 Force subscription set to channel:</b> <a href='https://t.me/{channel_username}'>{channel_info.title}</a>",
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True
+        )
 
     except Exception as e:
-        await message.reply_text("**🚫 Failed to set force subscription.**")
+        await message.reply_text("<b>🚫 Failed to set force subscription.</b>", parse_mode=ParseMode.HTML)
         
 @app.on_chat_member_updated()
 async def on_user_join(client: Client, chat_member_updated):
@@ -80,7 +84,8 @@ async def on_user_join(client: Client, chat_member_updated):
             )
             await client.send_message(
                 chat_id,
-                f"**🚫 {chat_member_updated.from_user.mention}, you have been muted because you need to join the [channel](https://t.me/{channel_username}) to send messages in this group.**",
+                f"<b>🚫 {chat_member_updated.from_user.mention}, you have been muted because you need to join the <a href='https://t.me/{channel_username}'>channel</a> to send messages in this group.</b>",
+                parse_mode=ParseMode.HTML,
                 disable_web_page_preview=True
             )
         except Exception as e:
@@ -96,10 +101,10 @@ async def on_user_join(client: Client, chat_member_updated):
                     chat_id,
                     user_id,
                     permissions=ChatPermissions(can_send_messages=True)
-                )
                 await client.send_message(
                     chat_id,
-                    f"**🎉 {chat_member_updated.from_user.mention}, you have been unmuted because you joined the [channel](https://t.me/{channel_username}).**",
+                    f"<b>🎉 {chat_member_updated.from_user.mention}, you have been unmuted because you joined the <a href='https://t.me/{channel_username}'>channel</a>.</b>",
+                    parse_mode=ParseMode.HTML,
                     disable_web_page_preview=True
                 )
         except UserNotParticipant:
@@ -111,7 +116,7 @@ async def on_user_join(client: Client, chat_member_updated):
             
 @app.on_callback_query(filters.regex("close_force_sub"))
 async def close_force_sub(client: Client, callback_query: CallbackQuery):
-    await callback_query.answer("ᴄʟᴏsᴇᴅ!")
+    await callback_query.answer("Closed!")
     await callback_query.message.delete()
     
 
@@ -142,13 +147,14 @@ async def check_forcesub(client: Client, message: Message):
             channel_url = invite_link
         await message.reply_photo(
             photo="https://envs.sh/Tn_.jpg",
-            caption=(f"**👋 ʜᴇʟʟᴏ {message.from_user.mention},**\n\n**ʏᴏᴜ ɴᴇᴇᴅ ᴛᴏ ᴊᴏɪɴ ᴛʜᴇ [ᴄʜᴀɴɴᴇʟ]({channel_url}) ᴛᴏ sᴇɴᴅ ᴍᴇssᴀɢᴇs ɪɴ ᴛʜɪs ɢʀᴏᴜᴘ.**"),
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("๏ ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ ๏", url=channel_url)]]),
+            caption=f"<b>👋 Hello {message.from_user.mention},</b>\n\n<b>You need to join the <a href='{channel_url}'>channel</a> to send messages in this group.</b>",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("๏ Join Channel ๏", url=channel_url)]]),
+            parse_mode=ParseMode.HTML
         )
         await asyncio.sleep(1)
     except ChatAdminRequired:
         forcesub_collection.delete_one({"chat_id": chat_id})
-        return await message.reply_text("**🚫 I'ᴍ ɴᴏ ʟᴏɴɢᴇʀ ᴀɴ ᴀᴅᴍɪɴ ɪɴ ᴛʜᴇ ғᴏʀᴄᴇᴅ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ᴄʜᴀɴɴᴇʟ. ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ʜᴀs ʙᴇᴇɴ ᴅɪsᴀʙʟᴇᴅ.**")
+        return await message.reply_text("<b>🚫 I'm no longer an admin in the forced subscription channel. Force subscription has been disabled.</b>", parse_mode=ParseMode.HTML)
 
 @app.on_message(filters.group, group=30)
 async def enforce_forcesub(client: Client, message: Message):
@@ -156,8 +162,8 @@ async def enforce_forcesub(client: Client, message: Message):
         return
 
 
-__MODULE__ = "ғsᴜʙ"
-__HELP__ = """**
-/fsub <ᴄʜᴀɴɴᴇʟ ᴜsᴇʀɴᴀᴍᴇ ᴏʀ ɪᴅ> - sᴇᴛ ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ғᴏʀ ᴛʜɪs ɢʀᴏᴜᴘ.
-/fsub off - ᴅɪsᴀʙʟᴇ ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ғᴏʀ ᴛʜɪs ɢʀᴏᴜᴘ.**
+__MODULE__ = "Fsub"
+__HELP__ = """
+<b>/fsub</b> <channel username or id> - Set force subscription for this group.
+<b>/fsub off</b> - Disable force subscription for this group.
 """
