@@ -50,7 +50,7 @@ async def set_forcesub(client: Client, message: Message):
         )
 
     except Exception as e:
-        await message.reply_text("<b>🚫 Failed to set force subscription.</b>", parse_mode=ParseMode.HTML)
+        await message.reply_text(f"<b>🚫 Failed to set force subscription. Error: {e}</b>", parse_mode=ParseMode.HTML)
         
 @app.on_chat_member_updated()
 async def on_user_join(client: Client, chat_member_updated):
@@ -101,6 +101,7 @@ async def on_user_join(client: Client, chat_member_updated):
                     chat_id,
                     user_id,
                     permissions=ChatPermissions(can_send_messages=True)
+                )
                 await client.send_message(
                     chat_id,
                     f"<b>🎉 {chat_member_updated.from_user.mention}, you have been unmuted because you joined the <a href='https://t.me/{channel_username}'>channel</a>.</b>",
@@ -158,8 +159,7 @@ async def check_forcesub(client: Client, message: Message):
 
 @app.on_message(filters.group, group=30)
 async def enforce_forcesub(client: Client, message: Message):
-    if not await check_forcesub(client, message):
-        return
+    await check_forcesub(client, message)
 
 
 __MODULE__ = "Fsub"
