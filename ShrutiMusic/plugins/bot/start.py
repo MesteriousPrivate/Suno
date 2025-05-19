@@ -25,8 +25,7 @@ from ShrutiMusic.utils.inline import help_pannel, private_panel, start_panel
 from config import BANNED_USERS
 from strings import get_string
 
-
-# Message effect ID to be used for all start command responses
+# Message effect ID to be applied
 MESSAGE_EFFECT_ID = 5104841245755180586
 
 
@@ -38,13 +37,23 @@ async def start_pm(client, message: Message, _):
         name = message.text.split(None, 1)[1]
         if name[0:4] == "help":
             keyboard = help_pannel(_)
-            return await message.reply_photo(
-                photo=config.START_IMG_URL,
-                caption=_["help_1"].format(config.SUPPORT_GROUP),
-                protect_content=True,
-                reply_markup=keyboard,
-                message_effect_id=MESSAGE_EFFECT_ID,
-            )
+            try:
+                return await app.send_photo(
+                    chat_id=message.chat.id,
+                    photo=config.START_IMG_URL,
+                    caption=_["help_1"].format(config.SUPPORT_GROUP),
+                    protect_content=True,
+                    reply_markup=keyboard,
+                    message_effects=[{"effect_id": MESSAGE_EFFECT_ID}]
+                )
+            except Exception as e:
+                print(f"Effect application failed for help: {e}")
+                return await message.reply_photo(
+                    photo=config.START_IMG_URL,
+                    caption=_["help_1"].format(config.SUPPORT_GROUP),
+                    protect_content=True,
+                    reply_markup=keyboard,
+                )
         if name[0:3] == "sud":
             await sudoers_list(client=client, message=message, _=_)
             if await is_on_off(2):
@@ -54,7 +63,7 @@ async def start_pm(client, message: Message, _):
                 )
             return
         if name[0:3] == "inf":
-            m = await message.reply_text("🔎", message_effect_id=MESSAGE_EFFECT_ID)
+            m = await message.reply_text("🔎")
             query = (str(name)).replace("info_", "", 1)
             query = f"https://www.youtube.com/watch?v={query}"
             results = VideosSearch(query, limit=1)
@@ -78,29 +87,38 @@ async def start_pm(client, message: Message, _):
                     ],
                 ]
             )
+            
             await m.delete()
-            await app.send_photo(
-                chat_id=message.chat.id,
-                photo=thumbnail,
-                caption=searched_text,
-                reply_markup=key,
-                message_effect_id=MESSAGE_EFFECT_ID,
-            )
+            try:
+                await app.send_photo(
+                    chat_id=message.chat.id,
+                    photo=thumbnail,
+                    caption=searched_text,
+                    reply_markup=key,
+                    message_effects=[{"effect_id": MESSAGE_EFFECT_ID}]
+                )
+            except Exception as e:
+                print(f"Effect application failed for search: {e}")
+                await app.send_photo(
+                    chat_id=message.chat.id,
+                    photo=thumbnail,
+                    caption=searched_text,
+                    reply_markup=key,
+                )
             if await is_on_off(2):
                 return await app.send_message(
                     chat_id=config.LOG_GROUP_ID,
                     text=f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>ᴛʀᴀᴄᴋ ɪɴғᴏʀᴍᴀᴛɪᴏɴ</b>.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
                 )
     else:
-        # Sticker send & delete
-        sticker = await message.reply_sticker(
-            "CAACAgUAAxkBAAIQJGgkj5vewi7LZoP7mkgVFnsepm7FAALUEwAC1pghVT6MEA_vcmE6HgQ",
-            message_effect_id=MESSAGE_EFFECT_ID,
+        # Send sticker (without the message_effect_id parameter)
+        await message.reply_sticker(
+            "CAACAgUAAxkBAAIQJGgkj5vewi7LZoP7mkgVFnsepm7FAALUEwAC1pghVT6MEA_vcmE6HgQ"
         )
-        await asyncio.sleep(4)
-        await sticker.delete()
-
-        # Welcome message
+        
+        # Welcome message sent quickly after sticker
+        await asyncio.sleep(0.3)  # Just a small delay of 300 milliseconds
+        
         out = private_panel(_)
         UP, CPU, RAM, DISK = await bot_sys_stats()
         await message.reply_photo(
@@ -121,12 +139,23 @@ async def start_pm(client, message: Message, _):
 async def start_gp(client, message: Message, _):
     out = start_panel(_)
     uptime = int(time.time() - _boot_)
-    await message.reply_photo(
-        photo=config.START_IMG_URL,
-        caption=_["start_1"].format(app.mention, get_readable_time(uptime)),
-        reply_markup=InlineKeyboardMarkup(out),
-        message_effect_id=MESSAGE_EFFECT_ID,
-    )
+    
+    try:
+        await app.send_photo(
+            chat_id=message.chat.id,
+            photo=config.START_IMG_URL,
+            caption=_["start_1"].format(app.mention, get_readable_time(uptime)),
+            reply_markup=InlineKeyboardMarkup(out),
+            message_effects=[{"effect_id": MESSAGE_EFFECT_ID}]
+        )
+    except Exception as e:
+        print(f"Effect application failed in group: {e}")
+        await message.reply_photo(
+            photo=config.START_IMG_URL,
+            caption=_["start_1"].format(app.mention, get_readable_time(uptime)),
+            reply_markup=InlineKeyboardMarkup(out)
+        )
+    
     return await add_served_chat(message.chat.id)
 
 
@@ -143,32 +172,68 @@ async def welcome(client, message: Message):
                     pass
             if member.id == app.id:
                 if message.chat.type != ChatType.SUPERGROUP:
-                    await message.reply_text(_["start_4"], message_effect_id=MESSAGE_EFFECT_ID)
+                    try:
+                        await app.send_message(
+                            chat_id=message.chat.id,
+                            text=_["start_4"],
+                            message_effects=[{"effect_id": MESSAGE_EFFECT_ID}]
+                        )
+                    except Exception as e:
+                        print(f"Effect application failed for non-supergroup: {e}")
+                        await message.reply_text(_["start_4"])
                     return await app.leave_chat(message.chat.id)
+                    
                 if message.chat.id in await blacklisted_chats():
-                    await message.reply_text(
-                        _["start_5"].format(
-                            app.mention,
-                            f"https://t.me/{app.username}?start=sudolist",
-                            config.SUPPORT_GROUP,
-                        ),
-                        disable_web_page_preview=True,
-                        message_effect_id=MESSAGE_EFFECT_ID,
-                    )
+                    try:
+                        await app.send_message(
+                            chat_id=message.chat.id,
+                            text=_["start_5"].format(
+                                app.mention,
+                                f"https://t.me/{app.username}?start=sudolist",
+                                config.SUPPORT_GROUP,
+                            ),
+                            disable_web_page_preview=True,
+                            message_effects=[{"effect_id": MESSAGE_EFFECT_ID}]
+                        )
+                    except Exception as e:
+                        print(f"Effect application failed for blacklisted chat: {e}")
+                        await message.reply_text(
+                            _["start_5"].format(
+                                app.mention,
+                                f"https://t.me/{app.username}?start=sudolist",
+                                config.SUPPORT_GROUP,
+                            ),
+                            disable_web_page_preview=True,
+                        )
+                    return await app.leave_chat(message.chat.id)
                     return await app.leave_chat(message.chat.id)
 
                 out = start_panel(_)
-                await message.reply_photo(
-                    photo=config.START_IMG_URL,
-                    caption=_["start_3"].format(
-                        message.from_user.first_name,
-                        app.mention,
-                        message.chat.title,
-                        app.mention,
-                    ),
-                    reply_markup=InlineKeyboardMarkup(out),
-                    message_effect_id=MESSAGE_EFFECT_ID,
-                )
+                try:
+                    await app.send_photo(
+                        chat_id=message.chat.id,
+                        photo=config.START_IMG_URL,
+                        caption=_["start_3"].format(
+                            message.from_user.first_name,
+                            app.mention,
+                            message.chat.title,
+                            app.mention,
+                        ),
+                        reply_markup=InlineKeyboardMarkup(out),
+                        message_effects=[{"effect_id": MESSAGE_EFFECT_ID}]
+                    )
+                except Exception as e:
+                    print(f"Effect application failed for welcome: {e}")
+                    await message.reply_photo(
+                        photo=config.START_IMG_URL,
+                        caption=_["start_3"].format(
+                            message.from_user.first_name,
+                            app.mention,
+                            message.chat.title,
+                            app.mention,
+                        ),
+                        reply_markup=InlineKeyboardMarkup(out),
+                    )
                 await add_served_chat(message.chat.id)
                 await message.stop_propagation()
         except Exception as ex:
