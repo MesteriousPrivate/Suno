@@ -22,7 +22,6 @@ start_txt = """
 ➲ ⚙️ <b>ᴄᴜꜱᴛᴏᴍ ᴘʟᴜɢɪɴꜱ ᴀɴᴅ ᴍᴀɴᴀɢᴇᴍᴇɴᴛ</b>  
 
 <b>👑 ᴏᴡɴᴇʀꜱ:</b> @BackSpaceOP | @WTF_WhyMeeh  
-<b>🌐 ʀᴇᴘᴏ:</b> https://github.com/NoxxOP/NoxxMusic
 """
 
 buttons = InlineKeyboardMarkup([
