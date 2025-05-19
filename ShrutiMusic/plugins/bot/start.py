@@ -1,5 +1,7 @@
 import time
 import asyncio
+import random
+from typing import Final
 
 from pyrogram import filters
 from pyrogram.enums import ChatType
@@ -25,8 +27,19 @@ from ShrutiMusic.utils.inline import help_pannel, private_panel, start_panel
 from config import BANNED_USERS
 from strings import get_string
 
-# Message effect ID to be applied
-MESSAGE_EFFECT_ID = 5104841245755180587
+# Success effect IDs to be randomly selected
+SUCCESS_EFFECT_IDS: Final[list[str]] = [
+    "5104841245755180586",  # 🔥
+    "5107584321108051014",  # 👍
+    "5044134455711629726",  # ❤️
+    "5046509860389126442",  # 🎉
+    "5104858069142078462",  # 👎
+    "5046589136895476101",  # 💩
+]
+
+# Function to get a random effect ID
+def get_random_effect_id():
+    return int(random.choice(SUCCESS_EFFECT_IDS))
 
 
 @app.on_message(filters.command(["start"]) & filters.private & ~BANNED_USERS)
@@ -44,7 +57,7 @@ async def start_pm(client, message: Message, _):
                     caption=_["help_1"].format(config.SUPPORT_GROUP),
                     protect_content=True,
                     reply_markup=keyboard,
-                    message_effect_id=MESSAGE_EFFECT_ID
+                    message_effect_id=get_random_effect_id()
                 )
             except Exception as e:
                 print(f"Effect application failed for help: {e}")
@@ -90,13 +103,13 @@ async def start_pm(client, message: Message, _):
             
             await m.delete()
             try:
-                # Use app.send_photo instead of message.reply_photo
+                # Use app.send_photo with random effect ID
                 await app.send_photo(
                     chat_id=message.chat.id,
                     photo=thumbnail,
                     caption=searched_text,
                     reply_markup=key,
-                    message_effect_id=MESSAGE_EFFECT_ID
+                    message_effect_id=get_random_effect_id()
                 )
             except Exception as e:
                 print(f"Effect application failed for search: {e}")
@@ -111,25 +124,19 @@ async def start_pm(client, message: Message, _):
                     text=f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>ᴛʀᴀᴄᴋ ɪɴғᴏʀᴍᴀᴛɪᴏɴ</b>.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
                 )
     else:
-        # Send sticker first (without message effect)
-        await message.reply_sticker(
-            "CAACAgUAAxkBAAIQJGgkj5vewi7LZoP7mkgVFnsepm7FAALUEwAC1pghVT6MEA_vcmE6HgQ"
-        )
-        
-        # Short delay before sending welcome message
-        await asyncio.sleep(0.3)
+        # Removed sticker sending part
         
         out = private_panel(_)
         UP, CPU, RAM, DISK = await bot_sys_stats()
         
         try:
-            # Use app.send_photo with message_effect_id
+            # Use app.send_photo with random effect ID
             await app.send_photo(
                 chat_id=message.chat.id,
                 photo=config.START_IMG_URL,
                 caption=_["start_2"].format(message.from_user.mention, app.mention, UP, DISK, CPU, RAM),
                 reply_markup=InlineKeyboardMarkup(out),
-                message_effect_id=MESSAGE_EFFECT_ID
+                message_effect_id=get_random_effect_id()
             )
         except Exception as e:
             print(f"Effect application failed for welcome: {e}")
@@ -154,13 +161,13 @@ async def start_gp(client, message: Message, _):
     uptime = int(time.time() - _boot_)
     
     try:
-        # Use app.send_photo with message_effect_id
+        # Use app.send_photo with random effect ID
         await app.send_photo(
             chat_id=message.chat.id,
             photo=config.START_IMG_URL,
             caption=_["start_1"].format(app.mention, get_readable_time(uptime)),
             reply_markup=InlineKeyboardMarkup(out),
-            message_effect_id=MESSAGE_EFFECT_ID
+            message_effect_id=get_random_effect_id()
         )
     except Exception as e:
         print(f"Effect application failed in group: {e}")
@@ -188,11 +195,11 @@ async def welcome(client, message: Message):
             if member.id == app.id:
                 if message.chat.type != ChatType.SUPERGROUP:
                     try:
-                        # Use app.send_message with message_effect_id
+                        # Use app.send_message with random effect ID
                         await app.send_message(
                             chat_id=message.chat.id,
                             text=_["start_4"],
-                            message_effect_id=MESSAGE_EFFECT_ID
+                            message_effect_id=get_random_effect_id()
                         )
                     except Exception as e:
                         print(f"Effect application failed for non-supergroup: {e}")
@@ -201,7 +208,7 @@ async def welcome(client, message: Message):
                     
                 if message.chat.id in await blacklisted_chats():
                     try:
-                        # Use app.send_message with message_effect_id
+                        # Use app.send_message with random effect ID
                         await app.send_message(
                             chat_id=message.chat.id,
                             text=_["start_5"].format(
@@ -210,7 +217,7 @@ async def welcome(client, message: Message):
                                 config.SUPPORT_GROUP,
                             ),
                             disable_web_page_preview=True,
-                            message_effect_id=MESSAGE_EFFECT_ID
+                            message_effect_id=get_random_effect_id()
                         )
                     except Exception as e:
                         print(f"Effect application failed for blacklisted chat: {e}")
@@ -226,7 +233,7 @@ async def welcome(client, message: Message):
 
                 out = start_panel(_)
                 try:
-                    # Use app.send_photo instead with message_effect_id
+                    # Use app.send_photo with random effect ID
                     await app.send_photo(
                         chat_id=message.chat.id,
                         photo=config.START_IMG_URL,
@@ -237,7 +244,7 @@ async def welcome(client, message: Message):
                             app.mention,
                         ),
                         reply_markup=InlineKeyboardMarkup(out),
-                        message_effect_id=MESSAGE_EFFECT_ID
+                        message_effect_id=get_random_effect_id()
                     )
                 except Exception as e:
                     print(f"Effect application failed for welcome: {e}")
