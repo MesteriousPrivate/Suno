@@ -38,13 +38,12 @@ async def start_pm(client, message: Message, _):
         if name[0:4] == "help":
             keyboard = help_pannel(_)
             try:
-                return await app.send_photo(
-                    chat_id=message.chat.id,
+                return await message.reply_photo(
                     photo=config.START_IMG_URL,
                     caption=_["help_1"].format(config.SUPPORT_GROUP),
                     protect_content=True,
                     reply_markup=keyboard,
-                    message_effects=[{"effect_id": MESSAGE_EFFECT_ID}]
+                    message_effect_id=MESSAGE_EFFECT_ID
                 )
             except Exception as e:
                 print(f"Effect application failed for help: {e}")
@@ -90,17 +89,15 @@ async def start_pm(client, message: Message, _):
             
             await m.delete()
             try:
-                await app.send_photo(
-                    chat_id=message.chat.id,
+                await message.reply_photo(
                     photo=thumbnail,
                     caption=searched_text,
                     reply_markup=key,
-                    message_effects=[{"effect_id": MESSAGE_EFFECT_ID}]
+                    message_effect_id=MESSAGE_EFFECT_ID
                 )
             except Exception as e:
                 print(f"Effect application failed for search: {e}")
-                await app.send_photo(
-                    chat_id=message.chat.id,
+                await message.reply_photo(
                     photo=thumbnail,
                     caption=searched_text,
                     reply_markup=key,
@@ -121,12 +118,21 @@ async def start_pm(client, message: Message, _):
         
         out = private_panel(_)
         UP, CPU, RAM, DISK = await bot_sys_stats()
-        await message.reply_photo(
-            photo=config.START_IMG_URL,
-            caption=_["start_2"].format(message.from_user.mention, app.mention, UP, DISK, CPU, RAM),
-            reply_markup=InlineKeyboardMarkup(out),
-            message_effect_id=MESSAGE_EFFECT_ID,
-        )
+        try:
+            await message.reply_photo(
+                photo=config.START_IMG_URL,
+                caption=_["start_2"].format(message.from_user.mention, app.mention, UP, DISK, CPU, RAM),
+                reply_markup=InlineKeyboardMarkup(out),
+                message_effect_id=MESSAGE_EFFECT_ID
+            )
+        except Exception as e:
+            print(f"Effect application failed for welcome: {e}")
+            await message.reply_photo(
+                photo=config.START_IMG_URL,
+                caption=_["start_2"].format(message.from_user.mention, app.mention, UP, DISK, CPU, RAM),
+                reply_markup=InlineKeyboardMarkup(out)
+            )
+            
         if await is_on_off(2):
             return await app.send_message(
                 chat_id=config.LOG_GROUP_ID,
@@ -141,12 +147,11 @@ async def start_gp(client, message: Message, _):
     uptime = int(time.time() - _boot_)
     
     try:
-        await app.send_photo(
-            chat_id=message.chat.id,
+        await message.reply_photo(
             photo=config.START_IMG_URL,
             caption=_["start_1"].format(app.mention, get_readable_time(uptime)),
             reply_markup=InlineKeyboardMarkup(out),
-            message_effects=[{"effect_id": MESSAGE_EFFECT_ID}]
+            message_effect_id=MESSAGE_EFFECT_ID
         )
     except Exception as e:
         print(f"Effect application failed in group: {e}")
@@ -176,7 +181,7 @@ async def welcome(client, message: Message):
                         await app.send_message(
                             chat_id=message.chat.id,
                             text=_["start_4"],
-                            message_effects=[{"effect_id": MESSAGE_EFFECT_ID}]
+                            message_effect_id=MESSAGE_EFFECT_ID
                         )
                     except Exception as e:
                         print(f"Effect application failed for non-supergroup: {e}")
@@ -193,7 +198,7 @@ async def welcome(client, message: Message):
                                 config.SUPPORT_GROUP,
                             ),
                             disable_web_page_preview=True,
-                            message_effects=[{"effect_id": MESSAGE_EFFECT_ID}]
+                            message_effect_id=MESSAGE_EFFECT_ID
                         )
                     except Exception as e:
                         print(f"Effect application failed for blacklisted chat: {e}")
@@ -206,12 +211,10 @@ async def welcome(client, message: Message):
                             disable_web_page_preview=True,
                         )
                     return await app.leave_chat(message.chat.id)
-                    return await app.leave_chat(message.chat.id)
 
                 out = start_panel(_)
                 try:
-                    await app.send_photo(
-                        chat_id=message.chat.id,
+                    await message.reply_photo(
                         photo=config.START_IMG_URL,
                         caption=_["start_3"].format(
                             message.from_user.first_name,
@@ -220,7 +223,7 @@ async def welcome(client, message: Message):
                             app.mention,
                         ),
                         reply_markup=InlineKeyboardMarkup(out),
-                        message_effects=[{"effect_id": MESSAGE_EFFECT_ID}]
+                        message_effect_id=MESSAGE_EFFECT_ID
                     )
                 except Exception as e:
                     print(f"Effect application failed for welcome: {e}")
