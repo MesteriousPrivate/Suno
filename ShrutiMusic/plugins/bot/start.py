@@ -38,7 +38,8 @@ async def start_pm(client, message: Message, _):
         if name[0:4] == "help":
             keyboard = help_pannel(_)
             try:
-                return await message.reply_photo(
+                return await app.send_photo(
+                    chat_id=message.chat.id,
                     photo=config.START_IMG_URL,
                     caption=_["help_1"].format(config.SUPPORT_GROUP),
                     protect_content=True,
@@ -89,7 +90,9 @@ async def start_pm(client, message: Message, _):
             
             await m.delete()
             try:
-                await message.reply_photo(
+                # Use app.send_photo instead of message.reply_photo
+                await app.send_photo(
+                    chat_id=message.chat.id,
                     photo=thumbnail,
                     caption=searched_text,
                     reply_markup=key,
@@ -108,18 +111,21 @@ async def start_pm(client, message: Message, _):
                     text=f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>ᴛʀᴀᴄᴋ ɪɴғᴏʀᴍᴀᴛɪᴏɴ</b>.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
                 )
     else:
-        # Send sticker (without the message_effect_id parameter)
+        # Send sticker first (without message effect)
         await message.reply_sticker(
             "CAACAgUAAxkBAAIQJGgkj5vewi7LZoP7mkgVFnsepm7FAALUEwAC1pghVT6MEA_vcmE6HgQ"
         )
         
-        # Welcome message sent quickly after sticker
-        await asyncio.sleep(0.3)  # Just a small delay of 300 milliseconds
+        # Short delay before sending welcome message
+        await asyncio.sleep(0.3)
         
         out = private_panel(_)
         UP, CPU, RAM, DISK = await bot_sys_stats()
+        
         try:
-            await message.reply_photo(
+            # Use app.send_photo with message_effect_id
+            await app.send_photo(
+                chat_id=message.chat.id,
                 photo=config.START_IMG_URL,
                 caption=_["start_2"].format(message.from_user.mention, app.mention, UP, DISK, CPU, RAM),
                 reply_markup=InlineKeyboardMarkup(out),
@@ -127,6 +133,7 @@ async def start_pm(client, message: Message, _):
             )
         except Exception as e:
             print(f"Effect application failed for welcome: {e}")
+            # Fallback to reply_photo without effect
             await message.reply_photo(
                 photo=config.START_IMG_URL,
                 caption=_["start_2"].format(message.from_user.mention, app.mention, UP, DISK, CPU, RAM),
@@ -147,7 +154,9 @@ async def start_gp(client, message: Message, _):
     uptime = int(time.time() - _boot_)
     
     try:
-        await message.reply_photo(
+        # Use app.send_photo with message_effect_id
+        await app.send_photo(
+            chat_id=message.chat.id,
             photo=config.START_IMG_URL,
             caption=_["start_1"].format(app.mention, get_readable_time(uptime)),
             reply_markup=InlineKeyboardMarkup(out),
@@ -155,6 +164,7 @@ async def start_gp(client, message: Message, _):
         )
     except Exception as e:
         print(f"Effect application failed in group: {e}")
+        # Fallback to reply_photo without effect
         await message.reply_photo(
             photo=config.START_IMG_URL,
             caption=_["start_1"].format(app.mention, get_readable_time(uptime)),
@@ -178,6 +188,7 @@ async def welcome(client, message: Message):
             if member.id == app.id:
                 if message.chat.type != ChatType.SUPERGROUP:
                     try:
+                        # Use app.send_message with message_effect_id
                         await app.send_message(
                             chat_id=message.chat.id,
                             text=_["start_4"],
@@ -190,6 +201,7 @@ async def welcome(client, message: Message):
                     
                 if message.chat.id in await blacklisted_chats():
                     try:
+                        # Use app.send_message with message_effect_id
                         await app.send_message(
                             chat_id=message.chat.id,
                             text=_["start_5"].format(
@@ -214,7 +226,9 @@ async def welcome(client, message: Message):
 
                 out = start_panel(_)
                 try:
-                    await message.reply_photo(
+                    # Use app.send_photo instead with message_effect_id
+                    await app.send_photo(
+                        chat_id=message.chat.id,
                         photo=config.START_IMG_URL,
                         caption=_["start_3"].format(
                             message.from_user.first_name,
@@ -227,6 +241,7 @@ async def welcome(client, message: Message):
                     )
                 except Exception as e:
                     print(f"Effect application failed for welcome: {e}")
+                    # Fallback to reply_photo without effect
                     await message.reply_photo(
                         photo=config.START_IMG_URL,
                         caption=_["start_3"].format(
