@@ -26,7 +26,7 @@ from config import BANNED_USERS
 from strings import get_string
 
 # Message effect ID to be applied
-MESSAGE_EFFECT_ID = 5104841245755180586
+MESSAGE_EFFECT_ID = 5104841245755180587
 
 
 @app.on_message(filters.command(["start"]) & filters.private & ~BANNED_USERS)
