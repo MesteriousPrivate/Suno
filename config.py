@@ -34,7 +34,7 @@ LOG_GROUP_ID = int(getenv("LOG_GROUP_ID", 0))         # 📥 Group ID where logs
 HEROKU_APP_NAME = getenv("HEROKU_APP_NAME")           # 🚀 Heroku App Name
 HEROKU_API_KEY = getenv("HEROKU_API_KEY")             # 🔐 Heroku API Key
 
-UPSTREAM_REPO = getenv("UPSTREAM_REPO", "https://github.com/MesteriousPrivate/ShrutiMusic")
+UPSTREAM_REPO = getenv("UPSTREAM_REPO", "https://github.com/MesteriousPrivate/Suno")
 UPSTREAM_BRANCH = getenv("UPSTREAM_BRANCH", "main")
 GIT_TOKEN = getenv("GIT_TOKEN", None)                 # 🔒 GitHub Token for private repos
 
