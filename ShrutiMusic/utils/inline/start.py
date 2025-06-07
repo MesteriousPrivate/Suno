@@ -26,7 +26,10 @@ def private_panel(_):
         ],
         [
             InlineKeyboardButton(text=_["N_Y_1"], callback_data="LG"),
-            InlineKeyboardButton(text=_["N_Y_2"], url="https://github.com/NoxxOP/ShrutiMusic/fork")
+            InlineKeyboardButton(
+    text=_["N_Y_2"], 
+    callback_data="fork_repo"
+            )
         ],
         [
             InlineKeyboardButton(text=_["S_B_6"], url=config.SUPPORT_CHANNEL),
