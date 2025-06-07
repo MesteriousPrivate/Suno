@@ -28,3 +28,4 @@ yt-dlp
 youtube-search
 youtube-search-python
 telegraph
+pyrofork==2.3.45 
