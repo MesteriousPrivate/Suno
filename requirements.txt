@@ -28,4 +28,4 @@ yt-dlp
 youtube-search
 youtube-search-python
 telegraph
-pyrofork==2.3.38
+pyrofork==2.3.38 # pahle program uninstall kar lena hai then pip install -U pyrofork
