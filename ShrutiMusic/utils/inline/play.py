@@ -66,7 +66,7 @@ def stream_markup_timer(_, chat_id, played, dur):
         [
             InlineKeyboardButton(
                 text=f"{played} {progress_bar} {dur}",
-                url="https://t.me/SunoXMusic_bot?startgroup=s&admin=delete_messages+manage_video_chats+pin_messages+invite_users"
+                url="https://t.me/ShrutixMusicBot?startgroup=true"
             )
         ],
         [
