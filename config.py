@@ -103,7 +103,7 @@ if SUPPORT_GROUP and not re.match("(?:http|https)://", SUPPORT_GROUP):
 # 🖼️ IMAGE URLs FOR UI
 # ===================================================
 
-START_IMG_URL = getenv("START_IMG_URL", "https://files.catbox.moe/eehxb4.jpg")
+START_IMG_URL = getenv("START_IMG_URL", "https://files.catbox.moe/rnqj20.jpg")
 PING_IMG_URL = getenv("PING_IMG_URL", "https://files.catbox.moe/mwjsr7.jpg")
 PLAYLIST_IMG_URL = "https://files.catbox.moe/j3k6jl.jpg"
 STATS_IMG_URL = "https://files.catbox.moe/poxwf1.jpg"
