@@ -38,17 +38,19 @@ import config
 checker = {}
 upvoters = {}
 
+
+
 @app.on_callback_query(filters.regex("fork_repo"))
-async def fork_repo_callback(_, query):
-    await query.message.reply_text(
-        "🔗 Fork the repo here:\nhttps://github.com/NoxxOP/ShrutiMusic/fork",
+async def fork_repo_callback(client, query):
+    await query.message.edit_text(
+        text="🔗 Fork the repo here:\nhttps://github.com/NoxxOP/ShrutiMusic/fork",
+        disable_web_page_preview=True,
         reply_markup=InlineKeyboardMarkup(
             [
                 [InlineKeyboardButton("◀️ Back", callback_data="settings_back_helper")]
             ]
         )
     )
-
 @app.on_callback_query(filters.regex("ADMIN") & ~BANNED_USERS)
 @languageCB
 async def del_back_playlist(client, CallbackQuery, _):
